@@ -13,24 +13,25 @@ var fmt=function(n){return Math.round(n).toLocaleString('es-MX')};
 
 /* ================= CONTENIDO ================= */
 var P=[
-{id:'fraude',n:'01',c:K.alert,cs:'rgba(196,86,107,.13)',kick:'Banca digital · 2025',title:'Detección de fraude en transacciones',
- sub:'Un flujo en streaming que puntúa cada transacción bancaria y le dice al equipo de riesgos qué revisar primero.',
- chips:['Proyecto en equipo','Kafka','Spark Streaming','Delta Lake','Spark MLlib','MongoDB'],cover:'f-hora',
- tldr:['El fraude es raro: 5,079 de 200,000 transacciones (2.5%). Un equipo de riesgos no puede revisar todo, y las reglas fijas dejan escapar casi todo.',
-       'Exploramos los patrones, construimos variables de riesgo, entrenamos un Random Forest en Spark y lo conectamos a un flujo Kafka que puntúa en micro-lotes.',
-       'En la prueba final el modelo atrapó los 976 fraudes con 357 falsas alarmas. Las reglas base solo atrapaban 1 de cada 10.'],
- kpis:[['200,000','transacciones sintéticas, 19 campos'],['100%','recall en prueba: 976 de 976'],['73%','precisión: 357 falsas alarmas'],['3.4%','de las transacciones a revisión']],
+{id:'fraude',n:'01',c:K.alert,cs:'rgba(196,86,107,.13)',kick:'Banca digital · 2025, auditado y rehecho en 2026',title:'Detección de fraude en transacciones',
+ sub:'Primero audité nuestro modelo y encontré que su 100% de recall era falso. Luego lo rehice con 590,540 transacciones reales en un lakehouse con Spark, Kafka y PostgreSQL.',
+ chips:['Auditoría','Datos reales (IEEE-CIS)','Spark + Delta Lake','Kafka','PostgreSQL + data warehouse','Grafos · colas · Bayes'],cover:'f2-anillo',
+ tldr:['La versión original atrapaba 976 de 976 fraudes. La auditoría mostró por qué: datos sintéticos donde todo monto mayor a $1,500 era fraude, y el streaming calculaba las variables distinto que el entrenamiento.',
+       'La rehice con datos reales de Vesta: medallón bronze → silver → gold en Delta Lake, partición por tiempo, etiquetas que llegan con 30 días de retraso, un solo módulo de variables para batch y streaming, y PostgreSQL para operar y analizar.',
+       'Resultado honesto: revisando 3.35% de las transacciones se atrapa 53.6% del fraude (PR-AUC 0.558). Ordenando por pérdida esperada, el mismo equipo recupera 63% del dinero en lugar de 42%.'],
+ kpis:[['590,540','transacciones reales, 3.5% fraude'],['0.558','PR-AUC en el último mes (antes: 0.995 falso)'],['63%','del dinero recuperado revisando 3.35%'],['0','diferencia entre batch y streaming']],
  steps:[
-  ['Datos','Un banco simulado','200,000 transacciones con monto, tipo, canal, hora, saldos y estatus. 5,079 están marcadas como fraude probable.','El histórico se carga a un Delta Lake para que el entrenamiento y el flujo en vivo lean de la misma fuente.',null],
-  ['Exploración','¿Dónde se esconde el fraude?','Tres pistas claras: el tipo de operación (25.2% de fraude en transferencias internacionales y 23.7% en pagos de nómina, menos de 1% en casi todo lo demás), la hora (se concentra entre las 22:00 y las 05:59) y el monto.','El monto promedio de un fraude es de $44,319 contra $936 de una operación normal.','f-tipo'],
-  ['Reglas base','Primero, lo simple','Antes de modelar armamos un puntaje de tres banderas: horario, tipo y canal de riesgo. Con las tres encendidas, 71.8% de las transacciones son fraude.','Como clasificador se queda corto: atrapa 518 fraudes y deja pasar 4,561. Ese es el número a vencer.','f-base'],
-  ['Variables','Ingeniería de variables','Logaritmo del monto, razón entre el monto y lo típico para ese tipo de operación, proporción del saldo retirada, y banderas de horario, tipo y canal.','Los fraudes vacían una parte grande del saldo; las operaciones normales casi nunca pasan del 10%.','f-montos'],
-  ['Modelo','Random Forest en Spark MLlib','Entrenado con validación cruzada sobre 160,255 transacciones y evaluado en 39,745 que nunca vio, con métricas para eventos raros: recall y curva precisión-recall en lugar de exactitud.','Resultado: 976 fraudes atrapados, 0 perdidos, 357 falsas alarmas. Área bajo la curva PR de 0.995.','f-curvas'],
-  ['Streaming','Del notebook al flujo en vivo','Un productor genera eventos transaccionales hacia un tópico de Kafka. Spark Streaming los consume en micro-lotes, calcula las variables, aplica el modelo y guarda transacciones y alertas.','Una página de demostración muestra las alertas conforme llegan.',null],
-  ['Decisión','La cola de revisión','El entregable para el negocio es una cola ordenada por probabilidad de fraude. Revisando 1,333 de 39,745 operaciones (3.4%) se cubren todos los fraudes de la prueba; al azar, esas mismas revisiones encontrarían unos 33.',null,'f-imp']],
- gal:[['f-hora','La hora del crimen: volumen de operaciones y tasa de fraude por hora'],['f-tipo','Tasa de fraude por tipo de transacción'],['f-heat','Riesgo por tipo y canal'],['f-montos','Distribución de montos: normales contra fraudes'],['f-score','Puntaje de reglas: probabilidad de fraude con 0 a 3 banderas'],['f-base','Matriz de confusión de las reglas base'],['f-curvas','Curvas ROC, precisión-recall y confianza del modelo'],['f-imp','Importancia de variables del Random Forest']],
- lim:'Los datos son sintéticos y el fraude sigue los patrones con que se generó: montos altos y de madrugada. El monto y sus derivadas concentran 83% de la importancia. Un recall de 100% aquí significa que el modelo recuperó la regla del generador; con datos reales ese número sería una señal de fuga de información y habría que desconfiar.',
- repo:['https://github.com/Zidnz/scripts_PP','github.com/Zidnz/scripts_PP'],sim:'fraude',simT:'Simulador: tú pones el umbral',simH:'Cada punto es una transacción simulada en tu navegador con los patrones del proyecto. Las que superan el umbral de monto se van a revisión. Mueve el umbral y mira qué pasa con los fraudes que escapan y los clientes que molestas.'},
+  ['Auditoría','El 100% era demasiado bueno','Repasé el modelo original. Con regla “monto mayor a $1,500” bastaba para atrapar todo: el monto pesaba 77% del modelo y sin él el PR-AUC caía a 0.23. La bandera de horario estaba mal (el fraude era de 4 a 11 h, no de madrugada) y el productor de Kafka generaba categorías que el modelo nunca vio.','Un recall perfecto no era un logro, era la regla con que se generaron los datos.','f-curvas'],
+  ['Datos reales','Vesta, no un simulador','590,540 transacciones de comercio electrónico (competencia IEEE-CIS) con 434 columnas anonimizadas. Aquí el monto solo no distingue nada: ROC-AUC de 0.50.','Partición por tiempo: entreno días 1–120, validación 121–150, prueba 151–183. Con partición aleatoria el PR-AUC sube a 0.85 porque 84% de los fraudes de prueba vienen de clientes ya vistos defraudando.',null],
+  ['Lakehouse','Bronze, silver y gold en Delta Lake','Bronze guarda los CSV tal cual; silver une, limpia y corre pruebas de calidad que quedan registradas en su propia tabla; gold calcula las variables con ventanas de Spark que solo miran el pasado.','Cada fraude se “confirma” 30 días después, como un contracargo real. Verificado: cero etiquetas del mes de prueba visibles al calcular variables.',null],
+  ['Matemáticas discretas','Anillos de fraude en un grafo','Grafo bipartito de clientes y huellas de dispositivo. Encontré 219 componentes con dos o más defraudadores, contra 74 esperadas al azar según un modelo nulo.','Solo aparecen con la huella fina (modelo + navegador + resolución + sistema). Dentro de los anillos el fraude es 13% contra 6% de base.','f2-anillo'],
+  ['Modelos','Ablación honesta en Spark MLlib','Comparé árboles (GBT) con tres conjuntos de variables y una regresión logística, y elegí por el mes de validación. Ganó la logística: PR-AUC 0.558, ROC-AUC 0.922.','Agregar el historial del cliente empeoró el GBT, y el grafo y Poisson casi no pesan. La versión “estilo Kaggle”, que usa datos del futuro, sacó 0.390: el 0.96 de la competencia no se puede llevar a producción.','f2-modelos'],
+  ['Decisión','Bayes, mochila y colas','Regla de Bayes: revisar si probabilidad × monto supera el costo de revisar. Con capacidad fija es un problema de mochila: ordenar por pérdida esperada recupera 63% del dinero contra 42% por probabilidad.','Teoría de colas M/M/c: unas 104 alertas al día piden de 1 a 3 analistas según la hora. Una simulación Monte Carlo confirma la fórmula de Erlang C.','f2-decision'],
+  ['Streaming','Kafka, el mismo código y una prueba','Spark Structured Streaming lee el mes de prueba desde Kafka en micro-lotes, calcula las variables con el mismo módulo que el entrenamiento, puntúa y escribe en Delta y en PostgreSQL.','Una prueba automática compara batch contra streaming: diferencia máxima 0 en 94,635 transacciones. Ese era el defecto de fondo del proyecto original.',null],
+  ['Cómputo cognitivo','Cada alerta llega explicada','En PostgreSQL cada alerta trae una explicación en español (“el cliente ya tuvo fraude confirmado; en ese grupo el fraude es 27 veces más común”), los 7 casos resueltos más parecidos y una acción sugerida por reglas.','De las alertas marcadas “Bloquear”, 86% eran fraude real. Los casos parecidos no mejoran el orden (ROC-AUC 0.877 vs 0.881): ayudan a decidir, no a predecir.',null]],
+ gal:[['f2-anillo','Un anillo: 13 clientes con fraude que comparten dispositivos'],['f2-modelos','Ablación de modelos y de dónde aprende el GBT'],['f2-decision','Costo por umbral, mochila con capacidad y analistas por hora'],['f-curvas','Versión original: curvas casi perfectas sobre datos sintéticos'],['f-hora','Versión original: fraude por hora en los datos sintéticos'],['f-montos','Versión original: el monto separaba todo']],
+ lim:'Solo usé 20 de las 339 columnas V, y el GBT de Spark se detiene temprano (26–79 árboles), por eso perdió contra la logística. El costo de revisión ($3) y los 10 minutos por caso son supuestos. El cliente (UID) es una aproximación porque Vesta no publica un ID. La precisión baja de 46% a ~33% conforme pasan las semanas: el umbral hay que recalibrarlo.',
+ repo:['https://github.com/Zidnz/scripts_PP','github.com/Zidnz/scripts_PP'],sim:'fraude',simT:'Simulador: mismo equipo, distinto criterio',simH:'Tienes analistas para revisar solo una parte de las transacciones. Elige cómo ordenar la cola y cuánto puedes revisar. Mira cuántos fraudes atrapas y cuánto dinero salvas.'},
 
 {id:'milpin',n:'02',c:K.teal,cs:'rgba(47,127,108,.13)',kick:'AgTech · 2026',title:'MILPÍN, riego inteligente',
  sub:'Sistema de apoyo a decisiones de riego para el Distrito de Riego 041, Valle del Yaqui, Sonora.',
@@ -98,16 +99,15 @@ lb.addEventListener('click',function(e){if(e.target===lb)lb.close()});
 /* ================= DATOS EXTRA: herramientas, pipelines y modelos de datos ================= */
 function ic(n){return '<svg class="ic" aria-hidden="true"><use href="#i-'+n+'"/></svg>'}
 var X={
-fraude:{card:['Banca digital','Clasificación en streaming','200,000 transacciones'],
- tools:[['py','Python'],['stream','Kafka'],['spark','Spark Streaming'],['layers','Delta Lake'],['tree','Random Forest (MLlib)'],['doc','MongoDB']],
- pipe:[['gen','Productor','Script en Python','eventos JSON'],['stream','Kafka','Tópico transacciones_bancarias','cola de eventos'],['spark','Spark Streaming','Micro-lotes','variables de riesgo'],['layers','Delta Lake','Parquet en 8 particiones','histórico + features'],['tree','Random Forest','Spark MLlib, validación cruzada','probabilidad de fraude'],['doc','MongoDB','transaction_logs y fraud_alerts','alertas guardadas'],['screen','Demo web','Tablero de alertas','cola de revisión']],
- funnel:{t:'Embudo de la prueba final',d:[['Transacciones totales',200000],['Reservadas para prueba',39745],['Alertas del modelo',1333],['Fraudes confirmados',976]],n:'El alto de cada bloque usa escala de raíz cuadrada para que los bloques pequeños sigan siendo visibles.'},
- sn:'Tres capas de almacenamiento: el evento que viaja por Kafka, las tablas Delta para entrenar y las colecciones de MongoDB para operar.',
- schema:[['stream','transacciones_bancarias','tópico',[['id_transaccion','int','PK'],['id_cliente','int'],['fecha','date'],['hora_movimiento','time'],['monto','double'],['tipo_transaccion','string'],['canal_transaccion','string'],['medio_pago','string'],['saldo_previo','double'],['saldo_posterior','double'],['estatus','string'],['fraude_probable','Sí / No'],['+ 7 campos más','']]],
-  ['layers','delta_lake_features','Delta',[['id_transaccion','int','FK'],['feat_log_monto','double'],['feat_ratio_monto_vs_tipo','double'],['feat_horario_riesgo','0 / 1'],['feat_tipo_riesgo','0 / 1'],['feat_canal_riesgo','0 / 1'],['label','0 / 1']]],
-  ['doc','transaction_logs','colección',[['transaction_id','índice único','PK'],['documento de la transacción','JSON']]],
-  ['doc','fraud_alerts','colección',[['transaction_id','índice','FK'],['documento de la alerta','JSON']]]],
- facts:[['200,000','filas en el histórico'],['19','campos por transacción'],['8','particiones Parquet'],['160,255 / 39,745','entrenamiento / prueba']]},
+fraude:{card:['Banca digital','Lakehouse + streaming','590,540 transacciones reales'],
+ tools:[['py','Python'],['spark','PySpark 4'],['layers','Delta Lake'],['stream','Kafka'],['db','PostgreSQL'],['tree','Spark MLlib'],['net','networkx'],['chart','SciPy (Poisson, Erlang C)']],
+ pipe:[['doc','CSV de Vesta','IEEE-CIS, 434 columnas','datos crudos'],['layers','Bronze → Silver','Delta Lake + pruebas de calidad','datos limpios'],['spark','Gold','Ventanas de Spark, solo pasado','105 variables'],['tree','Modelo','Logística en MLlib + Platt','probabilidad calibrada'],['stream','Kafka','Structured Streaming','mismo features.py'],['db','PostgreSQL','operacion.alertas + dw.*','alertas explicadas'],['screen','Analista','Cola por pérdida esperada','qué revisar primero']],
+ funnel:{t:'Embudo del mes de prueba (streaming)',d:[['Transacciones del mes',94635],['Alertas del modelo',3426],['Fraudes en las alertas',1156],['Marcadas “Bloquear”',726]],n:'El alto de cada bloque usa escala de raíz cuadrada para que los bloques pequeños sigan siendo visibles.'},
+ sn:'Tres capas: tablas Delta para el lakehouse, una tabla operativa en PostgreSQL para el analista y un data warehouse en estrella para el negocio.',
+ schema:[['layers','gold.atributos','Delta',[['TransactionID','int','PK'],['uid','string'],['particion','entreno · validación · prueba'],['n_1h, n_24h','int'],['sorpresa_poisson','double'],['grado_dispositivo','int'],['riesgo_tarjeta','double (30 días de retraso)'],['+ 98 variables','']]],
+  ['db','operacion.alertas','PostgreSQL',[['alerta_id','bigserial','PK'],['transaction_id','bigint único'],['prob','0 a 1'],['perdida_esperada','numeric'],['estado','pendiente · fraude · descartada'],['explicacion','texto'],['casos_similares','texto'],['accion_sugerida','texto']]],
+  ['db','dw.fact_transaccion','estrella',[['id_tiempo','int','FK'],['id_producto','int','FK'],['id_tarjeta','int','FK'],['id_canal','int','FK'],['id_email','int','FK'],['monto','numeric'],['es_fraude','0 / 1'],['prob_modelo','double']]]],
+ facts:[['590,540','transacciones reales'],['11','pasos reproducibles'],['94,635','eventos por Kafka'],['3,426','alertas explicadas']]},
 milpin:{card:['AgTech','Modelo físico + ML','800 ciclos, 5 cultivos'],
  tools:[['py','Python'],['api','FastAPI'],['db','PostgreSQL'],['map','PostGIS'],['tree','XGBoost + SHAP'],['chart','scikit-learn'],['map','Leaflet'],['cloud','Netlify · Railway · Supabase']],
  pipe:[['cloud','Clima diario','Tabla clima_diario','temperatura y radiación'],['drop','Motor FAO-56','Penman-Monteith o Hargreaves','ETo y ETc'],['db','PostgreSQL + PostGIS','7 tablas y 2 vistas','balance por parcela'],['tree','Modelos','Ridge, Isolation Forest, K-Means','pronóstico y anomalías'],['api','API FastAPI','6 routers','JSON y GeoJSON'],['map','Mapa y voz','Leaflet y Web Speech','recomendación de riego']],
@@ -234,8 +234,8 @@ P.forEach(function(p){var x=X[p.id];
 
 /* inventario */
 (function(){var G=[['Lenguajes',[['py','Python',[0,1,2,3]],['db','SQL',[1,2]],['r','R',[2,3]],['js','JavaScript',[1,2,3]]]],
-  ['Datos y big data',[['stream','Kafka',[0]],['spark','Spark Streaming',[0]],['layers','Delta Lake',[0]],['db','PostgreSQL + PostGIS',[1]],['db','SQLite (esquema estrella)',[2]],['doc','MongoDB',[0,3]]]],
-  ['Modelos y estadística',[['tree','Random Forest y XGBoost',[0,1]],['chart','scikit-learn',[1,2]],['net','Keras',[3]],['survey','Encuestas con diseño muestral',[2]]]],
+  ['Datos y big data',[['stream','Kafka',[0]],['spark','Spark + Structured Streaming',[0]],['layers','Delta Lake',[0]],['db','PostgreSQL',[0,1]],['map','PostGIS',[1]],['db','SQLite (esquema estrella)',[2]],['doc','MongoDB',[3]]]],
+  ['Modelos y estadística',[['tree','Spark MLlib (GBT y logística)',[0]],['tree','XGBoost',[1]],['net','Grafos, colas M/M/c y Bayes',[0]],['chart','scikit-learn',[1,2]],['net','Keras',[3]],['survey','Encuestas con diseño muestral',[2]]]],
   ['Producto',[['api','FastAPI y Express',[1,3]],['map','Leaflet',[1]],['chart','Power BI',[1,2]],['key','RSA, JWT y bcrypt',[3]]]]];
   $('inv').innerHTML=G.map(function(g){return '<div><h4>'+g[0]+'</h4><ul>'+g[1].map(function(t){return '<li>'+ic(t[0])+t[1]+'<span>'+P.map(function(p,i){return '<i style="background:'+(t[2].indexOf(i)>=0?p.c:'transparent')+'" title="'+short[p.id]+'"></i>'}).join('')+'</span></li>'}).join('')+'</ul></div>'}).join('')})();
 
@@ -394,16 +394,16 @@ var SKINS=[
  {id:'pastel',name:'Tarjetas pastel',d:'Tarjetas redondas turquesa con carrusel de misiones',sw:['#ffffff','#44b8b8','#bfeeee']},
  {id:'fusion',name:'Jardín pastel',d:'La mezcla: el jardín pixel en turquesa con las tarjetas pastel',sw:['#fbfaf6','#2fa7a7','#ffc2d6']}];
 var SKIN='jardin';
-var KEYW={fraude:['fraud','banc','kafka','spark','transac','random','alerta'],milpin:['rieg','agua','milp','fao','cultiv','postgis','xgboost','agro','yaqui'],
+var KEYW={fraude:['fraud','banc','kafka','spark','transac','delta','alerta','grafo','audit','lakehouse'],milpin:['rieg','agua','milp','fao','cultiv','postgis','xgboost','agro','yaqui'],
  observatorio:['cuid','observ','enasic','censo','encuest','regla','social','relevo'],qchaucoin:['moned','qchau','block','caden','rsa','cripto','stable','fintech']};
 function matchMission(q){q=(q||'').toLowerCase();for(var k in KEYW)if(KEYW[k].some(function(w){return q.indexOf(w)>=0}))return k;return null}
-var RES={fraude:'976 de 976 fraudes en la prueba',milpin:'MVP desplegado, 115 pruebas',observatorio:'La regla simple empató a los modelos',qchaucoin:'Cadena, monedero y modelo de precio'};
+var RES={fraude:'Auditado: 100% falso → 53.6% real',milpin:'MVP desplegado, 115 pruebas',observatorio:'La regla simple empató a los modelos',qchaucoin:'Cadena, monedero y modelo de precio'};
 function lic(n){return ic(n)}
 function sp(def,ramp,cls){return pix(def,ramp,cls)}
 
 function pastelGrid(){return '<div class="hpa-grid">'+
  '<div><h3>Proyectos ›</h3><div class="arts">'+P.slice(0,2).map(function(p){return '<button type="button" data-go="'+p.id+'"><img src="assets/img/'+p.cover+'.webp" alt=""><span>'+short[p.id]+'</span></button>'}).join('')+'</div><button class="vm" type="button" data-scroll="levels-h">Ver más</button></div>'+
- '<div><h3>Búsquedas recientes</h3><div class="srch">'+[['detección de fraude con Kafka','fraude'],['riego con FAO-56','milpin'],['esquema estrella ENASIC','observatorio'],['blockchain y RSA','qchaucoin'],['random forest en Spark','fraude'],['PostGIS y parcelas','milpin']].map(function(s,i){return '<button type="button" data-go="'+s[1]+'" style="--k:'+i+'">'+ic('filter')+s[0]+'</button>'}).join('')+'</div></div>'+
+ '<div><h3>Búsquedas recientes</h3><div class="srch">'+[['detección de fraude con Kafka','fraude'],['riego con FAO-56','milpin'],['esquema estrella ENASIC','observatorio'],['blockchain y RSA','qchaucoin'],['lakehouse con Delta Lake','fraude'],['PostGIS y parcelas','milpin']].map(function(s,i){return '<button type="button" data-go="'+s[1]+'" style="--k:'+i+'">'+ic('filter')+s[0]+'</button>'}).join('')+'</div></div>'+
  '<div class="nums">'+P.map(function(p){return '<button type="button" data-go="'+p.id+'" style="--c:'+p.c+'"><b>'+p.n+'</b><span><strong>'+short[p.id]+'</strong><small>'+RES[p.id]+'</small></span></button>'}).join('')+'</div></div>'}
 var HERO={
 mundo:function(){var p0=P[0];return '<div class="h-mundo"><div class="wrap hm">'+
@@ -426,7 +426,7 @@ jardin:function(R){R=R||'blue';return '<div class="h-jardin"><div class="wrap hj
  '<div class="bubble">CARGANDO DATOS…<i></i></div><div class="cat">'+sp(dCat(),R)+'</div><div class="mush">'+sp(dMush(),R)+'</div><div class="hrt">'+sp(dHeart(),R)+'</div>'+
  [1,2,3,4,5].map(function(i){return '<div class="spk s'+i+'">'+sp(dSpark(),R)+'</div>'}).join('')+
  '<div class="row">'+[0,1,2,3,4,5,6].map(function(){return sp(dTiny(),R)}).join('')+'</div></div></div>'+
- '<div class="wrap"><div class="ticker">'+sp(dRadio(),R)+'<div class="tk"><div class="tk-in">'+(function(){var t='Ahora corriendo: pipeline de fraude en Kafka ♪ · · · ETo del día: 7.1 mm · · · regla de 40 h contra modelos: sin ganador claro · · · QchauCoin = 1.00 · · · gracias por visitar ✦ · · · ';return '<span>'+t+'</span><span>'+t+'</span>'})()+'</div></div><span class="eq"><i></i><i></i><i></i><i></i></span></div></div></div>'},
+ '<div class="wrap"><div class="ticker">'+sp(dRadio(),R)+'<div class="tk"><div class="tk-in">'+(function(){var t='Ahora corriendo: lakehouse de fraude en Spark ♪ · · · batch = streaming ✓ · · · ETo del día: 7.1 mm · · · regla de 40 h contra modelos: sin ganador claro · · · QchauCoin = 1.00 · · · gracias por visitar ✦ · · · ';return '<span>'+t+'</span><span>'+t+'</span>'})()+'</div></div><span class="eq"><i></i><i></i><i></i><i></i></span></div></div></div>'},
 fusion:function(){return HERO.jardin('teal')+'<div class="h-pastel h-fu"><div class="wrap">'+pastelGrid()+'</div></div>'},
 pixo:function(){var R='rose';return '<div class="h-pixo"><div class="wrap hp"><h1>Datos pequeños.<br>Grandes decisiones.</h1>'+
  '<p class="lede">Soy Omar, estudiante de Ciencia de Datos para el Negocio. Dato, mi asistente, te lleva a cualquier misión.</p>'+
@@ -462,7 +462,7 @@ function posterArt(){var s='<svg viewBox="0 0 520 480" class="pa" aria-hidden="t
 /* --- secciones compartidas que cambian con la skin --- */
 var WORK=[['db','Datos reales','Limpieza de CRM real de varias unidades de negocio en Veolia: duplicados, etapas y monedas.','chart'],
  ['pipe','Pipelines','Kafka, Spark, Delta Lake, PostgreSQL con PostGIS y almacenes en esquema estrella.','layers'],
- ['lupa','Modelos auditados','Random Forest, XGBoost y regresión. Y sospechar cuando algo sale demasiado bien.','tree'],
+ ['lupa','Modelos auditados','Spark MLlib, XGBoost y regresión. Y sospechar cuando algo sale demasiado bien: audité mi propio 100% de recall.','tree'],
  ['chart','Tableros','Power BI, Looker Studio y sitios propios para que alguien decida con los números.','screen']];
 function renderShared(){var px=(SKIN==='jardin'||SKIN==='pixo'||SKIN==='bloques'||SKIN==='fusion'),R=SKIN==='pixo'?'rose':SKIN==='bloques'?'leaf':SKIN==='fusion'?'teal':'blue';
  $('what').innerHTML=WORK.map(function(w){return '<div class="wk"><span class="wi">'+(px?pix(dWork(w[0]),R):ic(w[3]))+'</span><h4>'+w[1]+'</h4><p>'+w[2]+'</p>'+(px?'<span class="wh">'+pix(dHeart(),R)+'</span>':'')+'</div>'}).join('');
@@ -512,7 +512,7 @@ function setSkin(id,init){if(!SKINS.some(function(k){return k.id===id}))id='jard
 /* ================= MAPA DE NODOS (hero) ================= */
 (function(){if(!$('graph'))return;
   var cv=$('graph'),cap=$('g-cap'),W=0,H=0,ctx,N=[],E=[],sel=null,drag=null,moved=false,raf=0,t=0;
-  var techs={'Python':[0,1,2,3],'SQL':[1,2],'R':[2,3],'Spark':[0],'Kafka':[0],'MongoDB':[0,3],'FastAPI':[1],'PostGIS':[1],'XGBoost':[1],'scikit-learn':[1,2],'JavaScript':[1,2,3],'Power BI':[1,2],'Node.js':[3],'Keras':[3],'Muestreo':[2]};
+  var techs={'Python':[0,1,2,3],'SQL':[0,1,2],'PostgreSQL':[0,1],'Delta Lake':[0],'R':[2,3],'Spark':[0],'Kafka':[0],'MongoDB':[3],'FastAPI':[1],'PostGIS':[1],'XGBoost':[1],'scikit-learn':[1,2],'JavaScript':[1,2,3],'Power BI':[1,2],'Node.js':[3],'Keras':[3],'Muestreo':[2]};
   var names=['Fraude','MILPÍN','Observatorio','QchauCoin'];
   N.push({k:'me',l:'Omar',r:26,c:K.shell});
   P.forEach(function(p,i){N.push({k:'p',i:i,l:names[i],r:21,c:p.c,id:p.id})});
@@ -573,39 +573,50 @@ function setSkin(id,init){if(!SKINS.some(function(k){return k.id===id}))id='jard
 (function(){
   var m=sims.fraude;
   m.innerHTML='<div class="sim-grid"><div><canvas id="fs" height="250" aria-label="Flujo animado de transacciones que se separan entre revisión y aprobadas"></canvas>'+
-   '<div class="legend"><span><i style="background:'+K.alert+'"></i>Fraude</span><span><i style="background:'+K.mint+'"></i>Operación normal</span><span><i style="background:'+K.lav+'"></i>Aún sin clasificar</span></div></div>'+
-   '<div><div class="ctl"><label for="fs-t">Mandar a revisión si el monto supera <output id="fs-to"></output><input id="fs-t" type="range" min="0" max="100" step="1" value="46"></label></div>'+
+   '<div class="legend"><span><i style="background:'+K.alert+'"></i>Fraude (tamaño = monto)</span><span><i style="background:'+K.mint+'"></i>Operación normal</span><span><i style="background:'+K.lav+'"></i>Aún sin clasificar</span></div>'+
    '<div class="read"><div><b id="fs-tp" class="num">0</b><small>fraudes atrapados</small></div><div><b id="fs-fn" class="num">0</b><small>fraudes que escaparon</small></div><div><b id="fs-fp" class="num">0</b><small>clientes molestados</small></div>'+
-   '<div><b id="fs-re" class="num">n/d</b><small>recall</small></div><div><b id="fs-pr" class="num">n/d</b><small>precisión</small></div><div><b id="fs-n" class="num">0</b><small>transacciones vistas</small></div></div>'+
-   '<p class="note">Umbral bajo: no escapa nadie, pero molestas a muchos clientes. Umbral alto: pocos molestos, y fraudes que pasan. El modelo real usa más variables que el monto; por eso logra 73% de precisión sin perder fraudes. Aquí 1 de cada 20 puntos es fraude para que se vea; en los datos es 1 de cada 40.</p></div></div>';
-  var cv=$('fs'),o,D=[],c={tp:0,fn:0,fp:0,n:0},thr=0,raf=0,fr=0;
+   '<div><b id="fs-re" class="num">n/d</b><small>fraudes atrapados (%)</small></div><div><b id="fs-usd" class="num">n/d</b><small>dinero de fraude salvado</small></div><div><b id="fs-n" class="num">0</b><small>transacciones vistas</small></div></div></div>'+
+   '<div><div class="seg" id="fs-crit" role="group" aria-label="Cómo ordenar la cola"></div>'+
+   '<div class="ctl" style="margin-top:14px"><label for="fs-c">Porcentaje que alcanzas a revisar <output id="fs-co"></output><input id="fs-c" type="range" min="1" max="10" step="0.5" value="3.5"></label></div>'+
+   '<p class="note" id="fs-msg"></p>'+
+   '<p class="note">Las distribuciones imitan el proyecto real: el monto solo casi no distingue fraude (ROC 0.50) y el modelo sí (0.92). En los datos reales, revisando 3.35%: por probabilidad se salva 42% del dinero; por pérdida esperada, 63%. Aquí 1 de cada 20 puntos es fraude para que se vea; en los datos es 1 de cada 29.</p></div></div>';
+  var CR=['Por monto','Por probabilidad','Por pérdida esperada'],crit=2,cap=.035,thr=0;
+  var MSG=['Revisar solo lo caro parece sensato, pero en datos reales el fraude no es más caro que lo normal: casi todo se escapa.',
+           'El modelo ordena bien quién es fraude, pero trata igual un fraude de $5 que uno de $900.',
+           'Probabilidad × monto: atrapas algunos fraudes menos, pero los más caros. Es la solución de la mochila con capacidad fija.'];
+  var cv=$('fs'),o,D=[],c,raf=0,fr=0;
   function g(){return(Math.random()+Math.random()+Math.random()+Math.random()+Math.random()+Math.random()-3)/.707}
-  function tx(){var f=Math.random()<.05;return{f:f,a:Math.exp(f?10.4+.75*g():6.2+1.2*g()),x:0,y:.5+(Math.random()-.5)*.5,ty:null,v:.004+Math.random()*.002}}
-  function setT(){thr=Math.round(Math.exp(Math.log(300)+(+$('fs-t').value/100)*(Math.log(120000)-Math.log(300)))/100)*100;$('fs-to').textContent='$'+fmt(thr);c={tp:0,fn:0,fp:0,n:0};D.forEach(function(d){if(d.x<.42)d.ty=null});rd()}
+  function tx(){var f=Math.random()<.05,z=f?-1.3+1.5*g():-4.3+1.5*g();return{f:f,p:1/(1+Math.exp(-z)),a:Math.exp(f?4.4+1.05*g():4.3+g()),x:0,y:.5+(Math.random()-.5)*.5,ty:null,v:.004+Math.random()*.002}}
+  function sc(d){return crit===0?d.a:crit===1?d.p:d.p*d.a}
+  var REF=[];for(var i=0;i<20000;i++)REF.push(tx());
+  function setT(){var v=REF.map(sc).sort(function(x,y){return x-y});thr=v[Math.floor((1-cap)*v.length)];c={tp:0,fn:0,fp:0,n:0,uT:0,uS:0};
+    D.forEach(function(d){if(d.x<.42)d.ty=null});$('fs-co').textContent=(cap*100).toFixed(1).replace('.0','')+'%';$('fs-msg').textContent=MSG[crit];rd()}
   function rd(){$('fs-tp').textContent=c.tp;$('fs-fn').textContent=c.fn;$('fs-fp').textContent=c.fp;$('fs-n').textContent=fmt(c.n);
-    $('fs-re').textContent=c.tp+c.fn?Math.round(100*c.tp/(c.tp+c.fn))+'%':'n/d';$('fs-pr').textContent=c.tp+c.fp?Math.round(100*c.tp/(c.tp+c.fp))+'%':'n/d'}
-  function count(d){var rev=d.a>thr;c.n++;if(d.f&&rev)c.tp++;else if(d.f)c.fn++;else if(rev)c.fp++}
+    $('fs-re').textContent=c.tp+c.fn?Math.round(100*c.tp/(c.tp+c.fn))+'%':'n/d';$('fs-usd').textContent=c.uT?Math.round(100*c.uS/c.uT)+'%':'n/d'}
+  function count(d){var rev=sc(d)>thr;c.n++;if(d.f){c.uT+=d.a;if(rev){c.tp++;c.uS+=d.a}else c.fn++}else if(rev)c.fp++;return rev}
+  function setC(i){crit=i;[].forEach.call($('fs-crit').children,function(bn,j){bn.setAttribute('aria-pressed',j===i)});setT();if(RM)bulk()}
+  CR.forEach(function(t,i){var bn=el('button',null,t);bn.type='button';bn.setAttribute('aria-pressed',i===crit);bn.onclick=function(){setC(i)};$('fs-crit').appendChild(bn)});
   function frame(){
     var x=o.x,w=o.w,h=o.h,gx=w*.42;x.clearRect(0,0,w,h);
     x.fillStyle='rgba(192,67,90,.07)';x.fillRect(gx,0,w-gx,h*.42);x.fillStyle='rgba(125,209,193,.12)';x.fillRect(gx,h*.42,w-gx,h*.58);
     x.setLineDash([5,5]);x.strokeStyle=K.accent;x.lineWidth=1.5;x.beginPath();x.moveTo(gx,0);x.lineTo(gx,h);x.stroke();x.setLineDash([]);
-    x.font='700 11px "DM Mono",monospace';x.fillStyle=K.accent;x.textAlign='left';x.fillText('MODELO',gx+8,h-10);
+    x.font='700 11px "DM Mono",monospace';x.fillStyle=K.accent;x.textAlign='left';x.fillText(CR[crit].toUpperCase(),gx+8,h-10);
     x.fillStyle=K.alert;x.textAlign='right';x.fillText('COLA DE REVISIÓN',w-10,18);x.fillStyle=K.teal;x.fillText('APROBADAS',w-10,h-10);
     x.fillStyle=K.soft;x.textAlign='left';x.fillText('KAFKA →',10,18);
-    if(++fr%3===0&&D.length<140)D.push(tx());
+    if(++fr%2===0&&D.length<160)D.push(tx());
     for(var i=D.length-1;i>=0;i--){var d=D[i];d.x+=d.v;
-      if(d.x>=.42&&d.ty===null){d.ty=d.a>thr?.1+Math.random()*.24:.52+Math.random()*.4;count(d);if(fr%6===0)rd()}
+      if(d.x>=.42&&d.ty===null){d.ty=count(d)?.1+Math.random()*.24:.52+Math.random()*.4;if(fr%6===0)rd()}
       if(d.ty!==null)d.y+=(d.ty-d.y)*.07;
       if(d.x>1.03){D.splice(i,1);continue}
-      var r=2.2+Math.min(5,Math.max(0,Math.log(d.a)-5)*.9);
+      var r=2+Math.min(6,Math.max(0,Math.log(d.a)-3)*1.2);
       x.globalAlpha=.9;x.fillStyle=d.ty===null?K.lav:(d.f?K.alert:K.mint);x.beginPath();x.arc(d.x*w,d.y*h,r,0,6.283);x.fill();
       if(d.ty!==null&&d.f){x.strokeStyle=K.alert;x.globalAlpha=.5;x.beginPath();x.arc(d.x*w,d.y*h,r+4,0,6.283);x.stroke()}}
     x.globalAlpha=1;raf=requestAnimationFrame(frame);
   }
+  function bulk(){for(var i=0;i<4000;i++)count(tx());rd()}
   function size(){o=fit(cv)}
-  $('fs-t').addEventListener('input',setT);size();setT();window.addEventListener('resize',size);
-  if(RM){for(var i=0;i<3000;i++)count(tx());rd();var x=o.x;x.font='600 14px "DM Mono",sans-serif';x.fillStyle=K.soft;x.textAlign='center';x.fillText('Animación desactivada: se muestran los conteos de 3,000 transacciones.',o.w/2,o.h/2);
-    $('fs-t').addEventListener('input',function(){for(var i=0;i<3000;i++)count(tx());rd()})}
+  $('fs-c').addEventListener('input',function(){cap=+$('fs-c').value/100;setT();if(RM)bulk()});size();setT();window.addEventListener('resize',size);
+  if(RM){bulk();var x=o.x;x.font='600 14px "DM Mono",sans-serif';x.fillStyle=K.soft;x.textAlign='center';x.fillText('Animación desactivada: se muestran los conteos de 4,000 transacciones.',o.w/2,o.h/2)}
   else onView(cv,function(){if(!raf)frame()},function(){cancelAnimationFrame(raf);raf=0});
 })();
 
