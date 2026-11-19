@@ -244,6 +244,7 @@ go((location.hash||'#inicio').slice(1),true);
 
 /* ================= INICIO: portada, secciones y contacto ================= */
 var GH='https://github.com/Zidnz',LI='https://www.linkedin.com/in/omar-guti%C3%A9rrez-88507527a/';
+var THEME=store('zidnz-theme')==='arcade'?'arcade':'pastel',VIEW=store('zidnz-view')==='3d'?'3d':'2d';
 var RES={fraude:'53.6% del fraude revisando 3.35%',milpin:'MVP desplegado, 115 pruebas',observatorio:'La regla simple empató a los modelos',qchaucoin:'Cadena, monedero y modelo de precio'};
 
 /* Ilustraciones vectoriales (SVG propio, sin pixeles) */
@@ -280,50 +281,140 @@ function artSpark(cls,c){return '<svg class="'+cls+'" viewBox="0 0 20 20" aria-h
 function artCloud(cls){return '<svg class="'+cls+'" viewBox="0 0 120 50" aria-hidden="true"><path d="M26 46C10 46 4 30 18 24C16 10 34 2 46 12C54-2 80 0 84 18C100 14 114 28 104 40C101 45 96 46 90 46Z" fill="#fff" stroke="#e3f8f8" stroke-width="2"/></svg>'}
 function artRadio(){return '<svg viewBox="0 0 40 30" aria-hidden="true"><path d="M10 9L30 1" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><rect x="2" y="9" width="36" height="20" rx="7" fill="#fff"/><circle cx="13" cy="19" r="5.5" fill="#44b8b8"/><rect x="23" y="14" width="11" height="3" rx="1.5" fill="#bfeeee"/><rect x="23" y="21" width="11" height="3" rx="1.5" fill="#bfeeee"/></svg>'}
 
-function heroScene(){return '<div class="hj-s" id="hero-scene"><div class="orb"></div>'+
+/* --- Ilustraciones del estilo "Arcade de datos": videojuegos, estadística y matemáticas --- */
+function artGamepad(cls){return '<svg class="'+cls+'" viewBox="0 0 170 108" aria-hidden="true"><defs><linearGradient id="gp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b3a63"/><stop offset="1" stop-color="#1a2342"/></linearGradient></defs>'+
+  '<ellipse cx="85" cy="102" rx="70" ry="5" fill="rgba(0,0,0,.25)"/>'+
+  '<path d="M38 22H132C150 22 162 40 164 66C166 86 158 98 148 98C138 98 134 88 126 80H44C36 88 32 98 22 98C12 98 4 86 6 66C8 40 20 22 38 22Z" fill="url(#gp)" stroke="#22d3ee" stroke-width="2.5"/>'+
+  '<rect x="30" y="42" width="30" height="9" rx="3" fill="#0b1020"/><rect x="40.5" y="31.5" width="9" height="30" rx="3" fill="#0b1020"/>'+
+  '<circle cx="124" cy="38" r="7" fill="#a3e635"/><circle cx="140" cy="50" r="7" fill="#fb7185"/><circle cx="108" cy="50" r="7" fill="#fbbf24"/><circle cx="124" cy="62" r="7" fill="#22d3ee"/>'+
+  '<circle cx="68" cy="64" r="9" fill="#0b1020" stroke="#3b4d80" stroke-width="2"/><circle cx="102" cy="64" r="9" fill="#0b1020" stroke="#3b4d80" stroke-width="2"/>'+
+  '<rect x="76" y="40" width="18" height="5" rx="2.5" fill="#3b4d80"/></svg>'}
+function artDie(cls){return '<svg class="'+cls+'" viewBox="0 0 100 108" aria-hidden="true"><defs><linearGradient id="dg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#4f46e5"/></linearGradient></defs>'+
+  '<polygon points="50,4 92,28 92,76 50,100 8,76 8,28" fill="url(#dg)" stroke="#a5f3fc" stroke-width="2.5" stroke-linejoin="round"/>'+
+  '<g fill="none" stroke="#a5f3fc" stroke-width="1.8" stroke-linejoin="round" opacity=".85"><polygon points="50,24 76,68 24,68"/><path d="M50 4V24M92 28L76 68M8 28L24 68M92 76L76 68M8 76L24 68M50 100V68"/></g>'+
+  '<text x="50" y="58" text-anchor="middle" font-family="DM Mono,monospace" font-weight="700" font-size="17" fill="#fff">20</text></svg>'}
+function artBell(cls){var p='',a='',i,x,y;for(i=0;i<=60;i++){x=-3+i*.1;y=Math.exp(-x*x/2);var X=(10+(x+3)/6*220).toFixed(1),Y=(96-y*80).toFixed(1);p+=(i?'L':'M')+X+' '+Y;}
+  a=p+'L230 96L10 96Z';
+  return '<svg class="'+cls+'" viewBox="0 0 240 124" aria-hidden="true"><defs><linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22d3ee" stop-opacity=".5"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></linearGradient></defs>'+
+  '<path d="'+a+'" fill="url(#bg2)"/><path d="'+p+'" fill="none" stroke="#22d3ee" stroke-width="3" stroke-linecap="round"/>'+
+  '<line x1="10" y1="96" x2="230" y2="96" stroke="#5b6b95" stroke-width="1.5"/><line x1="120" y1="12" x2="120" y2="96" stroke="#a3e635" stroke-width="1.8" stroke-dasharray="4 4"/>'+
+  '<line x1="83" y1="52" x2="83" y2="96" stroke="#fbbf24" stroke-width="1.4" stroke-dasharray="3 4"/><line x1="157" y1="52" x2="157" y2="96" stroke="#fbbf24" stroke-width="1.4" stroke-dasharray="3 4"/>'+
+  '<g font-family="DM Mono,monospace" font-size="11" fill="#9fb0d8" text-anchor="middle"><text x="120" y="112" fill="#a3e635">μ</text><text x="83" y="112">−σ</text><text x="157" y="112">+σ</text></g></svg>'}
+function artScatter(cls){var s=7,r=function(){s=(s*9301+49297)%233280;return s/233280},d='',i;
+  for(i=0;i<30;i++){var x=14+r()*128,y=108-(x-14)*.62-(r()-.5)*34;d+='<circle cx="'+x.toFixed(1)+'" cy="'+Math.max(14,Math.min(112,y)).toFixed(1)+'" r="3.4" fill="'+(i%5===0?'#fbbf24':'#22d3ee')+'"/>'}
+  return '<svg class="'+cls+'" viewBox="0 0 156 130" aria-hidden="true"><rect x="1" y="1" width="154" height="128" rx="14" fill="#17213a" stroke="#2a3a66" stroke-width="2"/>'+
+  '<path d="M12 118H146M12 118V12" stroke="#5b6b95" stroke-width="1.6" fill="none" stroke-linecap="round"/>'+d+
+  '<line x1="14" y1="108" x2="144" y2="26" stroke="#a3e635" stroke-width="2.4" stroke-dasharray="6 5" stroke-linecap="round"/>'+
+  '<text x="22" y="26" font-family="DM Mono,monospace" font-size="11" fill="#a3e635">r = 0.87</text></svg>'}
+function artChip(t,cls){return '<div class="chip3 '+cls+'">'+t+'</div>'}
+
+function viewSwitch(){return '<div class="viewsw" role="group" aria-label="Tipo de vista"><button type="button" data-view="2d" aria-pressed="'+(VIEW==='2d')+'">Ilustración</button><button type="button" data-view="3d" aria-pressed="'+(VIEW==='3d')+'">Modelo 3D</button></div>'}
+function heroScene(){
+ if(THEME==='arcade')return '<div class="hj-s arc" id="hero-scene"><div class="orb"></div>'+viewSwitch()+
+  '<div class="bell">'+artBell('')+'</div><div class="scat">'+artScatter('')+'</div>'+
+  '<div class="pad">'+artGamepad('')+'</div><div class="die">'+artDie('')+'</div><div class="comp">'+artLaptop('')+'</div>'+
+  '<div class="bubble">NIVEL 7 · XP<i></i></div>'+
+  '<div class="c1">'+artChip('Σ','')+'</div><div class="c2">'+artChip('∫','')+'</div><div class="c3">'+artChip('π','')+'</div><div class="c4">'+artChip('p&lt;.05','')+'</div></div>';
+ return '<div class="hj-s" id="hero-scene"><div class="orb"></div>'+viewSwitch()+
   '<div class="cloud">'+artCloud('')+'</div>'+
   '<div class="sway f1">'+artFlower('')+'</div><div class="sway f2" style="animation-delay:-2s">'+artFlower('')+'</div>'+
   '<div class="comp">'+artLaptop('')+'</div><div class="cat">'+artCat('')+'</div>'+
   '<div class="bubble">CARGANDO DATOS…<i></i></div><div class="hrt">'+artHeart('')+'</div>'+
   '<div class="spk s1">'+artSpark('')+'</div><div class="spk s2">'+artSpark('','#ffb3cb')+'</div><div class="spk s3">'+artSpark('','#ffd36b')+'</div><div class="spk s4">'+artSpark('')+'</div></div>'}
 
-function pastelGrid(){return '<div class="hpa-grid">'+
- '<div><h3>Proyectos ›</h3><div class="arts">'+P.slice(0,2).map(function(p){return '<button type="button" data-go="'+p.id+'"><img src="assets/img/'+p.cover+'.webp" alt=""><span>'+short[p.id]+'</span></button>'}).join('')+'</div><button class="vm" type="button" data-scroll="levels-h">Ver más</button></div>'+
- '<div><h3>Búsquedas recientes</h3><div class="srch">'+[['detección de fraude con Kafka','fraude'],['riego con FAO-56','milpin'],['esquema estrella ENASIC','observatorio'],['blockchain y RSA','qchaucoin'],['lakehouse con Delta Lake','fraude'],['PostGIS y parcelas','milpin']].map(function(s,i){return '<button type="button" data-go="'+s[1]+'" style="--k:'+i+'">'+ic('filter')+s[0]+'</button>'}).join('')+'</div></div>'+
- '<div class="nums">'+P.map(function(p){return '<button type="button" data-go="'+p.id+'" style="--c:'+p.c+'"><b>'+p.n+'</b><span><strong>'+short[p.id]+'</strong><small>'+RES[p.id]+'</small></span></button>'}).join('')+'</div></div>'}
+/* --- Estilo, vista y modelo 3D (Three.js se carga solo si se pide la vista 3D) --- */
+function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+function setTheme(id){THEME=id==='arcade'?'arcade':'pastel';store('zidnz-theme',THEME);document.documentElement.setAttribute('data-theme',THEME);
+ var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',THEME==='arcade'?'#0b1020':'#2fa7a7');renderHome()}
+function renderOpts(){$('opts').innerHTML=[['pastel','Pastel','#44b8b8'],['arcade','Arcade','#22d3ee']].map(function(o){return '<button type="button" data-set-theme="'+o[0]+'" aria-pressed="'+(THEME===o[0])+'" title="Estilo '+o[1]+'"><i style="--a:'+o[2]+'"></i><span>'+o[1]+'</span></button>'}).join('')}
+var gl3d=null,threeP=null;
+function loadThree(){if(window.THREE)return Promise.resolve();if(threeP)return threeP;
+ threeP=new Promise(function(ok,no){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';s.onload=ok;s.onerror=function(){threeP=null;no(new Error('three'))};document.head.appendChild(s)});return threeP}
+function stop3D(){if(gl3d){gl3d();gl3d=null}}
+function setView(v){VIEW=v==='3d'?'3d':'2d';store('zidnz-view',VIEW);applyView()}
+function applyView(){var sc=$('hero-scene');if(!sc)return;stop3D();
+ [].forEach.call(sc.querySelectorAll('.gl,.glhint'),function(n){n.remove()});
+ [].forEach.call(sc.querySelectorAll('[data-view]'),function(b){b.setAttribute('aria-pressed',b.dataset.view===VIEW)});
+ sc.classList.toggle('is3d',VIEW==='3d');if(VIEW!=='3d')return;
+ var box=el('div','gl');box.setAttribute('role','img');box.setAttribute('aria-label','Modelo 3D interactivo: superficie de una distribución con puntos de datos y un dado. Arrastra para girar.');sc.appendChild(box);
+ var hint=el('div','glhint','Arrastra para girar');sc.appendChild(hint);
+ loadThree().then(function(){if(VIEW!=='3d'||!box.isConnected)return;var stop=mount3D(box);if(stop)gl3d=stop;else fail()}).catch(fail);
+ function fail(){VIEW='2d';applyView();hint=null}}
+function mount3D(box){var T=window.THREE,r;
+ try{r=new T.WebGLRenderer({antialias:true,alpha:true})}catch(e){return null}
+ var css=getComputedStyle(document.documentElement),col=function(v,d){return new T.Color((css.getPropertyValue(v)||'').trim()||d)},
+  cA=col('--home','#2fa7a7'),cB=col('--hot-2','#ffb3cb'),cC=col('--g3','#44b8b8'),dark=THEME==='arcade';
+ var w=box.clientWidth||520,h=box.clientHeight||420;
+ r.setPixelRatio(Math.min(window.devicePixelRatio||1,2));r.setSize(w,h);box.appendChild(r.domElement);
+ var sc=new T.Scene(),cam=new T.PerspectiveCamera(38,w/h,.1,100);cam.position.set(0,4.2,12.6);cam.lookAt(0,.5,0);
+ sc.add(new T.AmbientLight(0xffffff,.75));var dl=new T.DirectionalLight(0xffffff,.95);dl.position.set(4,8,6);sc.add(dl);
+ var g=new T.Group();g.rotation.x=.12;sc.add(g);
+ function f(x,z){return 1.6*Math.exp(-((x-1)*(x-1)+(z+.5)*(z+.5))/2.2)+1.05*Math.exp(-((x+1.7)*(x+1.7)+(z-1.2)*(z-1.2))/1.5)-.3*Math.cos(x*1.7)*Math.cos(z*1.7)*Math.exp(-(x*x+z*z)/14)}
+ var N=34,S=7,geo=new T.PlaneGeometry(S,S,N,N);geo.rotateX(-Math.PI/2);
+ var pos=geo.attributes.position,ys=[],i,lo=9,hi=-9;
+ for(i=0;i<pos.count;i++){var yy=f(pos.getX(i),pos.getZ(i));pos.setY(i,yy);ys.push(yy);if(yy<lo)lo=yy;if(yy>hi)hi=yy}
+ var cols=[],tmp=new T.Color();
+ for(i=0;i<ys.length;i++){var k=(ys[i]-lo)/(hi-lo);if(k<.5)tmp.copy(cC).lerp(cA,k*2);else tmp.copy(cA).lerp(cB,(k-.5)*2);cols.push(tmp.r,tmp.g,tmp.b)}
+ geo.setAttribute('color',new T.Float32BufferAttribute(cols,3));geo.computeVertexNormals();
+ var surf=new T.Mesh(geo,new T.MeshStandardMaterial({vertexColors:true,roughness:.55,metalness:.1,side:T.DoubleSide,transparent:true,opacity:.94}));
+ var wire=new T.LineSegments(new T.WireframeGeometry(geo),new T.LineBasicMaterial({color:dark?0xcfe9ff:0xffffff,transparent:true,opacity:dark?.16:.28}));
+ g.add(surf);g.add(wire);
+ var grid=new T.GridHelper(S+1,14,dark?0x3b5a8a:0xbfeeee,dark?0x24365a:0xe3f8f8);grid.position.y=-.05;g.add(grid);
+ var pts=new T.InstancedMesh(new T.SphereGeometry(.07,10,10),new T.MeshStandardMaterial({color:cB,roughness:.4,emissive:cB,emissiveIntensity:dark?.45:.12}),90),m4=new T.Matrix4(),s=11,rnd=function(){s=(s*9301+49297)%233280;return s/233280};
+ for(i=0;i<90;i++){var px=(rnd()-.5)*6.2,pz=(rnd()-.5)*6.2;m4.setPosition(px,f(px,pz)+.12+rnd()*.5,pz);pts.setMatrixAt(i,m4)}
+ g.add(pts);
+ var die=new T.Mesh(new T.IcosahedronGeometry(.85,0),new T.MeshStandardMaterial({color:cA,flatShading:true,roughness:.3,metalness:.25}));
+ die.position.set(-2.5,2.9,1.2);die.add(new T.LineSegments(new T.EdgesGeometry(die.geometry),new T.LineBasicMaterial({color:0xffffff})));g.add(die);
+ var drag=false,lx=0,ly=0,idle=0,raf=0,RMo=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+ function down(e){drag=true;lx=e.clientX;ly=e.clientY;try{box.setPointerCapture(e.pointerId)}catch(x){}}
+ function move(e){if(!drag)return;g.rotation.y+=(e.clientX-lx)*.01;g.rotation.x=Math.max(-.2,Math.min(.9,g.rotation.x+(e.clientY-ly)*.006));lx=e.clientX;ly=e.clientY;idle=0}
+ function up(){drag=false}
+ box.addEventListener('pointerdown',down);box.addEventListener('pointermove',move);box.addEventListener('pointerup',up);box.addEventListener('pointercancel',up);
+ function size(){var W=box.clientWidth,H=box.clientHeight;if(!W||!H)return;r.setSize(W,H);cam.aspect=W/H;cam.updateProjectionMatrix();r.render(sc,cam)}
+ window.addEventListener('resize',size);
+ function tick(){raf=requestAnimationFrame(tick);if(!drag&&!RMo){g.rotation.y+=.004;idle++}die.rotation.x+=.012;die.rotation.y+=.017;die.position.y=2.9+Math.sin(performance.now()/700)*.18;r.render(sc,cam)}
+ r.render(sc,cam);tick();
+ return function(){cancelAnimationFrame(raf);window.removeEventListener('resize',size);box.removeEventListener('pointerdown',down);box.removeEventListener('pointermove',move);
+  [geo,surf.material,wire.geometry,wire.material,pts.geometry,pts.material,die.geometry,die.material,grid.geometry].forEach(function(o){if(o&&o.dispose)o.dispose()});r.dispose();if(r.domElement.parentNode)r.domElement.parentNode.removeChild(r.domElement)}}
+
+function infoGrid(){
+ var HOW=[['flag','Entender el problema','Antes de tocar datos: qué decisión hay que tomar y quién la toma.'],['db','Limpiar y explorar','Duplicados, etapas, monedas y patrones raros salen a la luz.'],['tree','Modelar y poner a prueba','Evaluar con el futuro, comparar contra una regla simple, desconfiar de lo perfecto.'],['chart','Explicar y decidir','Un tablero o una cola de trabajo que alguien pueda usar mañana.']],
+  NUM=[['590,540','transacciones reales analizadas'],['115','pruebas automáticas en un proyecto'],['4','proyectos de punta a punta'],['1 año','como Junior Data Analyst en Veolia']],
+  RUL=[['Si el resultado es perfecto, sospecha.','Un recall del 100% casi siempre esconde una fuga de información.'],['Evalúa con el futuro, no con el azar.','Partir los datos por tiempo evita resultados demasiado optimistas.'],['Una regla simple también es un modelo.','Si no supera a la regla, el modelo no se ha ganado su lugar.']];
+ return '<div class="hpa-grid">'+
+ '<div><h3>Cómo trabajo</h3><ol class="how">'+HOW.map(function(h,i){return '<li style="--k:'+i+'"><span class="hi">'+ic(h[0])+'</span><div><b>'+h[1]+'</b><small>'+h[2]+'</small></div></li>'}).join('')+'</ol></div>'+
+ '<div><h3>En números</h3><div class="stats">'+NUM.map(function(n){return '<div class="stat"><b>'+n[0]+'</b><small>'+n[1]+'</small></div>'}).join('')+'</div></div>'+
+ '<div><h3>Mis reglas</h3><div class="rules">'+RUL.map(function(r,i){return '<div class="rule"><i>'+(i+1)+'</i><div><b>'+r[0]+'</b><small>'+r[1]+'</small></div></div>'}).join('')+'</div></div></div>'}
 
 function heroHTML(){var tk='Ahora corriendo: lakehouse de fraude en Spark ♪ · · · batch = streaming ✓ · · · ETo del día: 7.1 mm · · · regla de 40 h contra modelos: sin ganador claro · · · QchauCoin = 1.00 · · · gracias por visitar ✦ · · · ';
  return '<div class="h-hero"><div class="wrap hj">'+
- '<aside class="rail"><b>UNRC</b><small>7.º SEM</small>'+artFlower('')+'<hr><a href="'+GH+'" target="_blank" rel="noopener noreferrer">GH</a><a href="'+LI+'" target="_blank" rel="noopener noreferrer">IN</a></aside>'+
- '<div class="hj-t"><p class="tagp">OMAR GUTIÉRREZ ESCOTO</p><h1>Datos que<br>toman<br>decisiones</h1><p class="lede">Estudiante de Ciencia de Datos para el Negocio en la UNRC y ex Junior Data Analyst en Veolia. Cultivo modelos, pipelines y tableros que ayudan a decidir.</p>'+
+ '<aside class="rail"><b>UNRC</b><small>7.º SEM</small>'+(THEME==='arcade'?artDie(''):artFlower(''))+'<hr><a href="'+GH+'" target="_blank" rel="noopener noreferrer">GH</a><a href="'+LI+'" target="_blank" rel="noopener noreferrer">IN</a></aside>'+
+ '<div class="hj-t"><p class="tagp">OMAR GUTIÉRREZ ESCOTO</p><h1>Datos que<br>toman<br>decisiones</h1><p class="lede">Estudiante de Ciencia de Datos para el Negocio en la UNRC y ex Junior Data Analyst en Veolia. Busco la historia escondida en los datos, la pruebo con rigor y la cuento para que cualquiera la entienda.</p>'+
  '<div class="cta"><button class="btn" type="button" data-scroll="levels-h">Ver misiones ›</button><a class="btn ghost" href="'+GH+'" target="_blank" rel="noopener noreferrer">GitHub ✿</a></div></div>'+
  heroScene()+'</div>'+
  '<div class="wrap"><div class="ticker">'+artRadio()+'<div class="tk"><div class="tk-in"><span>'+tk+'</span><span>'+tk+'</span></div></div><span class="eq"><i></i><i></i><i></i><i></i></span></div></div></div>'+
- '<div class="h-pastel h-fu"><div class="wrap">'+pastelGrid()+'</div></div>'}
+ '<div class="h-pastel h-fu"><div class="wrap">'+infoGrid()+'</div></div>'}
 
 var WORK=[['db','Datos reales','Limpieza de CRM real de varias unidades de negocio en Veolia con Salesforce: duplicados, etapas y monedas.','chart'],
  ['pipe','Pipelines','Kafka, Spark, Delta Lake, PostgreSQL con PostGIS y almacenes en esquema estrella.','layers'],
  ['lupa','Modelos auditados','Spark MLlib, XGBoost y regresión. Y sospechar cuando algo sale demasiado bien.','tree'],
  ['chart','Tableros','Tableau, CRM Analytics y Looker Studio en Veolia, y Power BI y sitios propios en mis proyectos, para que alguien decida con los números.','screen']];
 
-/* Cambia ART3D a true cuando agregues assets/hero/escena.webp y assets/hero/contacto.webp para reemplazar el dibujo vectorial */
-var ART3D=false;
-function tryArt(file,node,cls){var im=new Image();im.onload=function(){node.innerHTML='<img src="assets/hero/'+file+'" alt="" loading="lazy">';node.classList.add(cls)};im.src='assets/hero/'+file}
-
 function renderHome(){
- $('hero').innerHTML=heroHTML();
+ $('hero').innerHTML=heroHTML();applyView();renderOpts();
  $('what').innerHTML=WORK.map(function(w){return '<div class="wk"><span class="wi">'+ic(w[3])+'</span><h4>'+w[1]+'</h4><p>'+w[2]+'</p></div>'}).join('');
  $('levels').innerHTML='';
  P.forEach(function(p){var x=X[p.id];
   var lv=el('button','lv','<div class="thumb img"><img src="assets/img/'+p.cover+'.webp" alt=""></div><div class="in"><span class="no">MISIÓN '+p.n+'</span><h3>'+p.title+'</h3><dl><dt>Dominio</dt><dd>'+x.card[0]+'</dd><dt>Técnica</dt><dd>'+x.card[1]+'</dd><dt>Resultado</dt><dd>'+RES[p.id]+'</dd></dl><span class="play">Entrar →</span></div>');
   lv.type='button';lv.style.setProperty('--lc',p.c);lv.onclick=function(){go(p.id)};$('levels').appendChild(lv)});
- var cd=$('cta-deco');cd.innerHTML='<span class="d1">'+artMailbox('')+'</span><span class="d2">'+artCat('')+'</span><span class="d3">'+artFlower('')+'</span>';
- if(ART3D){tryArt('escena.webp',$('hero-scene'),'has-art');tryArt('contacto.webp',cd,'has-art')}
+ var cd=$('cta-deco');cd.innerHTML=THEME==='arcade'?'<span class="d1">'+artGamepad('')+'</span><span class="d2">'+artDie('')+'</span><span class="d3">'+artChip('Î£','')+'</span>':'<span class="d1">'+artMailbox('')+'</span><span class="d2">'+artCat('')+'</span><span class="d3">'+artFlower('')+'</span>';
  HOME.c=getComputedStyle(document.documentElement).getPropertyValue('--home').trim()||HOME.c;HOME.cs='color-mix(in srgb,'+HOME.c+' 13%,transparent)';tabBtn.inicio.style.setProperty('--tc',HOME.c);
  var cur=Object.keys(views).filter(function(k){return !views[k].hidden})[0]||'inicio';go(cur,true);
  setTimeout(function(){window.dispatchEvent(new Event('resize'))},60)}
 
-document.addEventListener('click',function(e){var t=e.target.closest('[data-go],[data-scroll]');if(!t)return;
+document.addEventListener('click',function(e){var t=e.target.closest('[data-go],[data-scroll],[data-view],[data-set-theme]');if(!t)return;
+ if(t.dataset.setTheme){setTheme(t.dataset.setTheme);return}
+ if(t.dataset.view){setView(t.dataset.view);return}
  if(t.dataset.go){go(t.dataset.go);return}
  var n=$(t.dataset.scroll);if(n)n.scrollIntoView({behavior:RM?'auto':'smooth',block:'start'})});
 
@@ -435,7 +526,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-go],
   s+='<rect x="318" y="226" width="58" height="20" rx="10" fill="#fff" stroke="'+K.hair+'"/><text class="tag" x="347" y="240" text-anchor="middle" fill="'+K.accent+'">−1.4 pp</text>';
   Object.keys(nodes).forEach(function(k){var n=nodes[k];
     s+='<g role="button" tabindex="0" data-k="'+k+'" aria-pressed="false" aria-label="'+n.t+'"><circle class="ring" cx="'+n.x+'" cy="'+n.y+'" r="'+(n.r+7)+'" stroke="'+n.c+'"/><circle class="core" cx="'+n.x+'" cy="'+n.y+'" r="'+n.r+'" fill="#fff" stroke="'+n.c+'" stroke-width="2.5"/>'+
-       '<text class="v" x="'+n.x+'" y="'+(n.y+5)+'" text-anchor="middle">'+n.v+'</text><text x="'+n.x+'" y="'+(k==='obj'||k==='azar'?n.y-n.r-12:n.y+n.r+20)+'" text-anchor="middle" style="font-weight:700;fill:'+K.ink+'">'+n.l+'</text></g>'});
+       '<text class="v" x="'+n.x+'" y="'+(n.y+5)+'" text-anchor="middle">'+n.v+'</text><text x="'+n.x+'" y="'+(k==='obj'||k==='azar'?n.y-n.r-12:n.y+n.r+20)+'" text-anchor="middle" style="font-weight:700;fill:var(--ink)">'+n.l+'</text></g>'});
   s+='</svg>';
   m.innerHTML='<div class="sim-grid"><div>'+s+'<div class="legend"><span>Línea punteada en movimiento: cada método intenta alcanzar el objetivo</span><span>Círculo punteado: rango probable (IC 90%)</span></div></div>'+
     '<div><div id="os-card" style="background:var(--paper-2);border:1px solid var(--hair);border-radius:14px;padding:16px"></div>'+
@@ -496,5 +587,5 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-go],
     x.fillStyle=K.alert;x.beginPath();x.arc(X(60),Y(s[60]),5,0,6.283);x.fill();x.fillStyle=K.amber;x.beginPath();x.arc(X(D),Y(s[D]),4,0,6.283);x.fill()}
   $('qs-a').addEventListener('input',upd);$('qs-s').addEventListener('input',upd);upd();window.addEventListener('resize',upd);
 })();
-renderHome();
+document.documentElement.setAttribute('data-theme',THEME);renderHome();
 })();

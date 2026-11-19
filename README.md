@@ -8,7 +8,8 @@ Portafolio web de **Omar Gutiérrez Escoto** (Ciudad de México), Data Scientist
 
 - Cuatro misiones: detección de fraude, MILPÍN, Observatorio y QChaucoin.
 - Simuladores que corren en el navegador (umbral de fraude, parcela de 60 días, mapa de nodos, cadena de bloques y precio).
-- Un solo estilo de tarjetas pastel con detalles de videojuego (ventanas, misiones, inventario y cinta animada), ilustraciones vectoriales y tipografía suave.
+- Dos estilos a elegir desde el encabezado: **Pastel** (claro, turquesa y rosa) y **Arcade** (oscuro, con motivos de videojuegos, estadística y matemáticas). Ambos con detalles de juego (ventanas, misiones, inventario y cinta animada), ilustraciones vectoriales y tipografía suave.
+- Vista **Modelo 3D** en la portada (superficie de una distribución, puntos de datos y un dado), que se puede girar arrastrando. Usa Three.js, que se carga desde cdnjs solo al activarla.
 - Inventario de herramientas, con las de mi experiencia real en Veolia marcadas (Tableau, Salesforce CRM, CRM Analytics y Looker Studio).
 - Sin dependencias ni paso de compilación: HTML, CSS y JavaScript puros.
 - Respeta `prefers-reduced-motion` y es responsive.
@@ -23,8 +24,7 @@ Portafolio web de **Omar Gutiérrez Escoto** (Ciudad de México), Data Scientist
 ├── js/
 │   └── main.js         # Contenido, simuladores e interacción
 ├── assets/
-│   ├── img/            # Capturas y figuras (.webp)
-│   └── hero/           # Ilustraciones 3D opcionales (escena.webp, contacto.webp)
+│   └── img/            # Capturas y figuras (.webp)
 ├── .nojekyll           # Evita el procesamiento de Jekyll en GitHub Pages
 └── README.md
 ```
