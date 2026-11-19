@@ -4,7 +4,7 @@ var $=function(id){return document.getElementById(id)};
 var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 var K={ink:'#1f2a44',soft:'rgba(31,42,68,.78)',hair:'rgba(31,42,68,.16)',accent:'#e8457a',lav:'#b9c3e6',mint:'#86cdb8',teal:'#2f7f6c',alert:'#c4566b',amber:'#b07d22',shell:'#1f2a44',paper:'#fbfbfd',vio:'#6f5fb0'};
 function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e}
-function fit(cv){var r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1,h=+cv.getAttribute('height');
+function fit(cv){var r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1,h=+(cv.dataset.h||cv.getAttribute('height'));cv.dataset.h=h;
   cv.width=Math.max(1,Math.round(r.width*d));cv.height=Math.round(h*d);cv.style.height=h+'px';
   var x=cv.getContext('2d');x.setTransform(d,0,0,d,0,0);return{x:x,w:r.width,h:h}}
 function onView(node,start,stop){if(!('IntersectionObserver'in window)){start();return}
