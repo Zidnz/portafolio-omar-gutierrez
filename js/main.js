@@ -244,29 +244,10 @@ go((location.hash||'#inicio').slice(1),true);
 
 /* ================= INICIO: portada, secciones y contacto ================= */
 var GH='https://github.com/Zidnz',LI='https://www.linkedin.com/in/omar-guti%C3%A9rrez-88507527a/';
-var THEME=store('zidnz-theme')==='pastel'?'pastel':'arcade',MODE=store('zidnz-mode')==='light'?'light':'dark',VIEW=store('zidnz-view')==='3d'?'3d':'2d';
+var MODE=store('zidnz-mode')==='light'?'light':'dark',VIEW=store('zidnz-view')==='3d'?'3d':'2d';
 var RES={fraude:'53.6% del fraude revisando 3.35%',milpin:'MVP desplegado, 115 pruebas',observatorio:'La regla simple empató a los modelos',qchaucoin:'Cadena, monedero y modelo de precio'};
 
 /* Ilustraciones vectoriales (SVG propio, sin pixeles) */
-function artFlower(cls){var s='<svg class="'+cls+'" viewBox="0 0 100 200" aria-hidden="true">'+
-  '<path d="M50 192C48 150 54 110 50 66" fill="none" stroke="#3a9d84" stroke-width="5" stroke-linecap="round"/>'+
-  '<path d="M50 152C28 148 18 130 16 114C36 116 48 130 50 152Z" fill="#5cc6a0"/>'+
-  '<path d="M51 130C72 128 84 112 86 96C66 98 53 110 51 130Z" fill="#46b08f"/>';
-  for(var i=0;i<8;i++)s+='<ellipse cx="50" cy="36" rx="11" ry="22" transform="rotate('+(i*45)+' 50 58)" fill="'+(i%2?'#ff8fb1':'#ffb3cb')+'"/>';
-  return s+'<circle cx="50" cy="58" r="12" fill="#ffd36b"/><circle cx="50" cy="58" r="5.5" fill="#f5b445"/></svg>'}
-function artCat(cls){return '<svg class="'+cls+'" viewBox="0 0 120 130" aria-hidden="true">'+
-  '<path d="M92 114C120 110 120 70 100 66" fill="none" stroke="#b9dfe6" stroke-width="9" stroke-linecap="round"/>'+
-  '<ellipse cx="62" cy="100" rx="34" ry="28" fill="#d4eef2"/><ellipse cx="60" cy="108" rx="15" ry="15" fill="#fff"/>'+
-  '<path d="M36 46L40 18L58 36Z" fill="#d4eef2"/><path d="M82 46L78 18L60 36Z" fill="#d4eef2"/>'+
-  '<path d="M41 38L43 27L51 35Z" fill="#ffb3cb"/><path d="M77 38L75 27L67 35Z" fill="#ffb3cb"/>'+
-  '<circle cx="59" cy="58" r="26" fill="#d4eef2"/><circle cx="49" cy="58" r="3.4" fill="#1f2b3a"/><circle cx="69" cy="58" r="3.4" fill="#1f2b3a"/>'+
-  '<path d="M56 66h6l-3 3.6z" fill="#ff8fb1"/><path d="M59 70q-4 5-8 3M59 70q4 5 8 3" fill="none" stroke="#1f2b3a" stroke-width="1.5" stroke-linecap="round"/>'+
-  '<ellipse cx="48" cy="123" rx="10" ry="5" fill="#fff"/><ellipse cx="72" cy="123" rx="10" ry="5" fill="#fff"/></svg>'}
-function artMailbox(cls){return '<svg class="'+cls+'" viewBox="0 0 110 150" aria-hidden="true">'+
-  '<rect x="44" y="72" width="12" height="78" rx="4" fill="#7d9db3"/>'+
-  '<rect x="30" y="16" width="42" height="28" rx="5" fill="#fff" stroke="#bfeeee" stroke-width="2" transform="rotate(-6 51 30)"/><path d="M32 20L51 34L70 20" fill="none" stroke="#bfeeee" stroke-width="2" transform="rotate(-6 51 30)"/>'+
-  '<path d="M12 86V58C12 40 28 30 50 30C72 30 88 40 88 58V86Z" fill="#44b8b8"/><path d="M12 70H88V86H12Z" fill="#2f9a9a"/>'+
-  '<rect x="84" y="26" width="5" height="40" rx="2.5" fill="#ff8fb1"/><rect x="86" y="26" width="22" height="15" rx="4" fill="#ff6f9c"/></svg>'}
 function artLaptop(cls){return '<svg class="'+cls+'" viewBox="0 0 300 220" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3b52"/><stop offset="1" stop-color="#1b2635"/></linearGradient>'+
   '<linearGradient id="la" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ee0d6" stop-opacity=".45"/><stop offset="1" stop-color="#5ee0d6" stop-opacity="0"/></linearGradient></defs>'+
   '<ellipse cx="150" cy="208" rx="132" ry="8" fill="rgba(31,43,58,.12)"/>'+
@@ -276,9 +257,6 @@ function artLaptop(cls){return '<svg class="'+cls+'" viewBox="0 0 300 220" aria-
   '<polyline points="54,128 88,106 120,114 152,82 186,92 224,56 246,64" fill="none" stroke="#5ee0d6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>'+
   '<circle cx="224" cy="56" r="6" fill="#ff8fb1" stroke="#fff" stroke-width="2"/>'+
   '<path d="M10 166H290L278 186Q276 192 268 192H32Q24 192 22 186Z" fill="#cfe6ea"/><rect x="122" y="166" width="56" height="8" rx="4" fill="#a9ccd2"/></svg>'}
-function artHeart(cls){return '<svg class="'+cls+'" viewBox="0 0 40 36" aria-hidden="true"><path d="M20 34C-6 16 6-4 20 8C34-4 46 16 20 34Z" fill="#ff8fb1"/></svg>'}
-function artSpark(cls,c){return '<svg class="'+cls+'" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 0C11 6 14 9 20 10C14 11 11 14 10 20C9 14 6 11 0 10C6 9 9 6 10 0Z" fill="'+(c||'#7fd6d6')+'"/></svg>'}
-function artCloud(cls){return '<svg class="'+cls+'" viewBox="0 0 120 50" aria-hidden="true"><path d="M26 46C10 46 4 30 18 24C16 10 34 2 46 12C54-2 80 0 84 18C100 14 114 28 104 40C101 45 96 46 90 46Z" fill="#fff" stroke="#e3f8f8" stroke-width="2"/></svg>'}
 function artRadio(){return '<svg viewBox="0 0 40 30" aria-hidden="true"><path d="M10 9L30 1" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><rect x="2" y="9" width="36" height="20" rx="7" fill="#fff"/><circle cx="13" cy="19" r="5.5" fill="#44b8b8"/><rect x="23" y="14" width="11" height="3" rx="1.5" fill="#bfeeee"/><rect x="23" y="21" width="11" height="3" rx="1.5" fill="#bfeeee"/></svg>'}
 
 /* --- Ilustraciones del estilo "Arcade de datos": videojuegos, estadística y matemáticas --- */
@@ -310,26 +288,19 @@ function artChip(t,cls){return '<div class="chip3 '+cls+'">'+t+'</div>'}
 
 function viewSwitch(){return '<div class="viewsw" role="group" aria-label="Tipo de vista"><button type="button" data-view="2d" aria-pressed="'+(VIEW==='2d')+'">Ilustración</button><button type="button" data-view="3d" aria-pressed="'+(VIEW==='3d')+'">Modelo 3D</button></div>'}
 function heroScene(){
- if(THEME==='arcade')return '<div class="hj-s arc" id="hero-scene"><div class="orb"></div>'+viewSwitch()+
+ return '<div class="hj-s arc" id="hero-scene"><div class="orb"></div>'+viewSwitch()+
   '<div class="bell">'+artBell('')+'</div><div class="scat">'+artScatter('')+'</div>'+
   '<div class="pad">'+artGamepad('')+'</div><div class="die">'+artDie('')+'</div><div class="comp">'+artLaptop('')+'</div>'+
   '<div class="bubble">NIVEL 7 · XP<i></i></div>'+
-  '<div class="c1">'+artChip('Σ','')+'</div><div class="c2">'+artChip('∫','')+'</div><div class="c3">'+artChip('π','')+'</div><div class="c4">'+artChip('p&lt;.05','')+'</div></div>';
- return '<div class="hj-s" id="hero-scene"><div class="orb"></div>'+viewSwitch()+
-  '<div class="cloud">'+artCloud('')+'</div>'+
-  '<div class="sway f1">'+artFlower('')+'</div><div class="sway f2" style="animation-delay:-2s">'+artFlower('')+'</div>'+
-  '<div class="comp">'+artLaptop('')+'</div><div class="cat">'+artCat('')+'</div>'+
-  '<div class="bubble">CARGANDO DATOS…<i></i></div><div class="hrt">'+artHeart('')+'</div>'+
-  '<div class="spk s1">'+artSpark('')+'</div><div class="spk s2">'+artSpark('','#ffb3cb')+'</div><div class="spk s3">'+artSpark('','#ffd36b')+'</div><div class="spk s4">'+artSpark('')+'</div></div>'}
+  '<div class="c1">'+artChip('Σ','')+'</div><div class="c2">'+artChip('∫','')+'</div><div class="c3">'+artChip('π','')+'</div><div class="c4">'+artChip('p&lt;.05','')+'</div></div>';}
 
 /* --- Estilo, vista y modelo 3D (Three.js se carga solo si se pide la vista 3D) --- */
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
-function applyLook(){var h=document.documentElement;h.setAttribute('data-theme',THEME);h.setAttribute('data-mode',MODE);
- var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',MODE==='dark'?(THEME==='arcade'?'#0b1020':'#0e171c'):(THEME==='arcade'?'#f1f6ff':'#fbfaf6'))}
-function setTheme(id){THEME=id==='pastel'?'pastel':'arcade';store('zidnz-theme',THEME);applyLook();renderHome()}
+function applyLook(){var h=document.documentElement;h.setAttribute('data-mode',MODE);
+ var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',MODE==='dark'?'#0b1020':'#f1f6ff')}
 function setMode(m){MODE=m==='light'?'light':'dark';store('zidnz-mode',MODE);applyLook();renderHome()}
 var ICO_MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/></svg>',ICO_SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
-function renderOpts(){$('opts').innerHTML=[['arcade','Arcade','#22d3ee'],['pastel','Pastel','#44b8b8']].map(function(o){return '<button type="button" data-set-theme="'+o[0]+'" aria-pressed="'+(THEME===o[0])+'" title="Estilo '+o[1]+'"><i style="--a:'+o[2]+'"></i><span>'+o[1]+'</span></button>'}).join('')+'<button type="button" class="mode" data-toggle-mode="1" aria-label="'+(MODE==='dark'?'Cambiar a modo claro':'Cambiar a modo oscuro')+'" title="'+(MODE==='dark'?'Modo claro':'Modo oscuro')+'">'+(MODE==='dark'?ICO_SUN:ICO_MOON)+'<span>'+(MODE==='dark'?'Claro':'Oscuro')+'</span></button>'}
+function renderOpts(){$('opts').innerHTML='<button type="button" class="mode" data-toggle-mode="1" aria-label="'+(MODE==='dark'?'Cambiar a modo claro':'Cambiar a modo oscuro')+'" title="'+(MODE==='dark'?'Modo claro':'Modo oscuro')+'">'+(MODE==='dark'?ICO_SUN:ICO_MOON)+'<span>'+(MODE==='dark'?'Claro':'Oscuro')+'</span></button>'}
 var gl3d=null,threeP=null;
 function loadThree(){if(window.THREE)return Promise.resolve();if(threeP)return threeP;
  threeP=new Promise(function(ok,no){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';s.onload=ok;s.onerror=function(){threeP=null;no(new Error('three'))};document.head.appendChild(s)});return threeP}
@@ -391,12 +362,12 @@ function infoGrid(){
 
 function heroHTML(){var tk='Ahora corriendo: lakehouse de fraude en Spark ♪ · · · batch = streaming ✓ · · · ETo del día: 7.1 mm · · · regla de 40 h contra modelos: sin ganador claro · · · QchauCoin = 1.00 · · · gracias por visitar ✦ · · · ';
  return '<div class="h-hero"><div class="wrap hj">'+
- '<aside class="rail"><b>UNRC</b><small>7.º SEM</small>'+(THEME==='arcade'?artDie(''):artFlower(''))+'<hr><a href="'+GH+'" target="_blank" rel="noopener noreferrer">GH</a><a href="'+LI+'" target="_blank" rel="noopener noreferrer">IN</a></aside>'+
+ '<aside class="rail"><b>UNRC</b><small>7.º SEM</small>'+artDie('')+'<hr><a href="'+GH+'" target="_blank" rel="noopener noreferrer">GH</a><a href="'+LI+'" target="_blank" rel="noopener noreferrer">IN</a></aside>'+
  '<div class="hj-t"><p class="tagp">OMAR GUTIÉRREZ ESCOTO</p><h1>Datos que<br>toman<br>decisiones</h1><p class="lede">Estudiante de Ciencia de Datos para el Negocio en la UNRC y ex Junior Data Analyst en Veolia. Busco la historia escondida en los datos, la pruebo con rigor y la cuento para que cualquiera la entienda.</p>'+
  '<div class="cta"><button class="btn" type="button" data-scroll="levels-h">Ver misiones ›</button><a class="btn ghost" href="'+GH+'" target="_blank" rel="noopener noreferrer">GitHub ✿</a></div></div>'+
  heroScene()+'</div>'+
  '<div class="wrap"><div class="ticker">'+artRadio()+'<div class="tk"><div class="tk-in"><span>'+tk+'</span><span>'+tk+'</span></div></div><span class="eq"><i></i><i></i><i></i><i></i></span></div></div></div>'+
- '<div class="h-pastel h-fu"><div class="wrap">'+infoGrid()+'</div></div>'}
+ '<div class="h-info"><div class="wrap">'+infoGrid()+'</div></div>'}
 
 var WORK=[['db','Datos reales','Limpieza de CRM real de varias unidades de negocio en Veolia con Salesforce: duplicados, etapas y monedas.','chart'],
  ['pipe','Pipelines','Kafka, Spark, Delta Lake, PostgreSQL con PostGIS y almacenes en esquema estrella.','layers'],
@@ -410,14 +381,13 @@ function renderHome(){
  P.forEach(function(p){var x=X[p.id];
   var lv=el('button','lv','<div class="thumb img"><img src="assets/img/'+p.cover+'.webp" alt=""></div><div class="in"><span class="no">MISIÓN '+p.n+'</span><h3>'+p.title+'</h3><dl><dt>Dominio</dt><dd>'+x.card[0]+'</dd><dt>Técnica</dt><dd>'+x.card[1]+'</dd><dt>Resultado</dt><dd>'+RES[p.id]+'</dd></dl><span class="play">Entrar →</span></div>');
   lv.type='button';lv.style.setProperty('--lc',p.c);lv.onclick=function(){go(p.id)};$('levels').appendChild(lv)});
- var cd=$('cta-deco');cd.innerHTML=THEME==='arcade'?'<span class="d1">'+artGamepad('')+'</span><span class="d2">'+artDie('')+'</span><span class="d3">'+artChip('Î£','')+'</span>':'<span class="d1">'+artMailbox('')+'</span><span class="d2">'+artCat('')+'</span><span class="d3">'+artFlower('')+'</span>';
+ var cd=$('cta-deco');cd.innerHTML='<span class="d1">'+artGamepad('')+'</span><span class="d2">'+artDie('')+'</span><span class="d3">'+artChip('Î£','')+'</span>';
  HOME.c=getComputedStyle(document.documentElement).getPropertyValue('--home').trim()||HOME.c;HOME.cs='color-mix(in srgb,'+HOME.c+' 13%,transparent)';tabBtn.inicio.style.setProperty('--tc',HOME.c);
  var cur=Object.keys(views).filter(function(k){return !views[k].hidden})[0]||'inicio';go(cur,true);
  setTimeout(function(){window.dispatchEvent(new Event('resize'))},60)}
 
-document.addEventListener('click',function(e){var t=e.target.closest('[data-go],[data-scroll],[data-view],[data-set-theme],[data-toggle-mode]');if(!t)return;
+document.addEventListener('click',function(e){var t=e.target.closest('[data-go],[data-scroll],[data-view],[data-toggle-mode]');if(!t)return;
  if(t.dataset.toggleMode){setMode(MODE==='dark'?'light':'dark');return}
- if(t.dataset.setTheme){setTheme(t.dataset.setTheme);return}
  if(t.dataset.view){setView(t.dataset.view);return}
  if(t.dataset.go){go(t.dataset.go);return}
  var n=$(t.dataset.scroll);if(n)n.scrollIntoView({behavior:RM?'auto':'smooth',block:'start'})});

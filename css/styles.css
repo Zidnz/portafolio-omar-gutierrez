@@ -104,7 +104,7 @@ img{max-width:100%;display:block}
 .callout .d3{right:11%;width:min(7%,46px)}
 footer{border-top:var(--bw) solid var(--hair);padding:24px 0 44px;font-size:13.5px;color:var(--soft)}
 footer .wrap{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:space-between}
-.h-pastel{padding:26px 0 0}
+.h-info{padding:26px 0 0}
 .hpa-grid{display:grid;grid-template-columns:1fr 1fr 1.1fr;gap:20px;margin-top:22px}
 .hpa-grid h3{font-size:21px;margin-bottom:12px}
 .mission{padding:24px 0 40px}
@@ -258,7 +258,7 @@ dialog .dc{display:flex;gap:12px;align-items:center;justify-content:space-betwee
 .btn.ghost{background:var(--panel);color:var(--ink);box-shadow:var(--shadow)}
 .ticker{border:0;border-radius:999px;background:linear-gradient(120deg,var(--g1),var(--g2) 60%,var(--g3));color:var(--on-grad);box-shadow:0 12px 28px rgba(40,140,150,.22)}
 .eq i{background:var(--on-grad)}
-.h-fu{padding-top:6px}
+
 .wk{align-items:center;text-align:center}
 .wk .wi{background:var(--tint);width:72px;height:72px;border-radius:20px}
 .home .shd .tagp{background:var(--tint);border-color:transparent;color:var(--tint-ink)}
@@ -301,10 +301,7 @@ dialog .dc{display:flex;gap:12px;align-items:center;justify-content:space-betwee
 .callout{border:0}
 @keyframes flow{to{stroke-dashoffset:-22}}
 @keyframes bob{50%{translate:0 -6px}}
-@keyframes tw{50%{opacity:.3;transform:scale(.7)}}
 @keyframes load{to{width:100%}}
-@keyframes drift2{to{transform:translateX(40px)}}
-@keyframes sway{0%,100%{rotate:-2deg}50%{rotate:2deg}}
 @keyframes marq{to{transform:translateX(-50%)}}
 @keyframes eq{0%{height:6px}50%{height:18px}100%{height:10px}}
 
@@ -324,18 +321,10 @@ dialog .dc{display:flex;gap:12px;align-items:center;justify-content:space-betwee
 .hj-s>div{position:absolute}
 .hj-s svg{display:block;width:100%;height:auto;overflow:visible}
 .hj-s .orb{left:12%;bottom:10px;width:78%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 40% 35%,var(--tint),var(--tint-b) 70%,transparent 71%)}
-.hj-s .f1{left:4%;bottom:14px;width:21%}
-.hj-s .f2{left:26%;bottom:14px;width:13%}
-.hj-s .cat{left:41%;bottom:14px;width:15%}
 .hj-s .comp{right:0;bottom:14px;width:46%}
-.hj-s .cloud{left:6%;top:5%;width:22%;animation:drift2 14s ease-in-out infinite alternate}
-.hj-s .hrt{left:52%;top:14%;width:6%;animation:bob 3s ease-in-out infinite}
-.hj-s .spk{width:5%;animation:tw 2.4s ease-in-out infinite}
-.hj-s .s1{left:34%;top:10%}.hj-s .s2{right:8%;top:6%;animation-delay:.6s}.hj-s .s3{left:2%;top:46%;animation-delay:1.2s}.hj-s .s4{right:2%;top:54%;animation-delay:.3s}
 .hj-s .bubble{right:6%;top:18%;font:500 11px var(--f-mono);padding:8px 12px;background:var(--panel);border-radius:16px;box-shadow:var(--shadow);color:var(--deep);letter-spacing:.04em}
 .hj-s .bubble i{display:block;height:8px;margin-top:6px;border-radius:99px;background:var(--tint);overflow:hidden}
 .hj-s .bubble i::after{content:"";display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,var(--home),var(--hot-2));animation:load 3s ease-in-out infinite}
-.sway{transform-origin:50% 100%;animation:sway 6s ease-in-out infinite}
 .ticker{display:flex;align-items:center;gap:14px;margin-top:22px;border-radius:999px;background:linear-gradient(120deg,var(--g1),var(--g2) 60%,var(--g3));color:var(--on-grad);padding:10px 20px;box-shadow:0 12px 28px rgba(40,140,150,.22)}
 .ticker>svg{width:38px;height:auto;flex:none}
 .tk{flex:1;overflow:hidden}
@@ -353,7 +342,7 @@ dialog .dc{display:flex;gap:12px;align-items:center;justify-content:space-betwee
 .callout .d3{right:15%;width:min(6%,50px)}
 .inv li span .vb{font:700 10px var(--f-label);letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:var(--tint);color:var(--tint-ink)}
 
-/* ---------- Tokens del estilo pastel (por defecto) ---------- */
+/* ---------- Tokens base (se redefinen por modo mÃ¡s abajo) ---------- */
 :root{--panel:#fff;--tint:#e3f8f8;--tint-2:#bfeeee;--tint-b:#fff0f5;--tint-ink:#1f7f80;--deep:#10303a;--on-grad:#10303a;
   --g1:#9fe3e3;--g2:#5cc6c6;--g3:#44b8b8;--hot:#ff8fb1;--hot-2:#ffb3cb;--btn-g1:#5cc6c6;--btn-g2:#2fa7a7;--on-btn:#fff}
 .btn{color:var(--on-btn)}
@@ -404,22 +393,14 @@ dialog .dc{display:flex;gap:12px;align-items:center;justify-content:space-betwee
 .callout .d3 .chip3{font-size:clamp(14px,2vw,22px);text-align:center}
 @media (max-width:860px){.hpa-grid{grid-template-columns:1fr}}
 .hj-s.arc .bubble{top:15%}
-/* ---------- Estilos (Pastel | Arcade) y modos (Claro | Oscuro) ---------- */
+/* ---------- Modos claro y oscuro ---------- */
 /* Pastel + claro son los valores por defecto de :root; aquí van los degradados y las otras tres combinaciones */
 :root{--bg-img:linear-gradient(rgba(47,167,167,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(47,167,167,.07) 1px,transparent 1px),radial-gradient(1000px 560px at 100% 0,rgba(94,224,214,.38),transparent 70%),radial-gradient(800px 480px at 0 100%,rgba(255,143,177,.3),transparent 70%);
   --bg-size:34px 34px,34px 34px,auto,auto;--grad-text:linear-gradient(100deg,#10303a 14%,#2fa7a7 58%,#ff8fb1);
   --callout:linear-gradient(120deg,var(--tint),var(--tint-b))}
 body{background-size:var(--bg-size)}
 
-:root[data-theme=pastel][data-mode=dark]{color-scheme:dark;
-  --bg:#0e171c;--bg-img:linear-gradient(rgba(94,224,214,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(94,224,214,.05) 1px,transparent 1px),radial-gradient(1000px 560px at 100% 0,rgba(79,209,197,.22),transparent 70%),radial-gradient(800px 480px at 0 100%,rgba(255,143,177,.16),transparent 70%);
-  --card:#132229;--card-2:#162830;--panel:#192e37;--ink:#e8f6f6;--soft:rgba(232,246,246,.78);--faint:rgba(232,246,246,.58);
-  --line:rgba(120,220,220,.18);--hair:rgba(120,220,220,.22);--hair-2:rgba(120,220,220,.08);--shadow:0 10px 28px rgba(0,0,0,.4);
-  --home:#4fd1c5;--tint:#14383b;--tint-2:#1b4f52;--tint-b:#34212c;--tint-ink:#8be9e9;--deep:#e8f6f6;--on-grad:#062a2c;
-  --g1:#4fd1c5;--g2:#38b2ac;--g3:#81e6d9;--hot:#ff8fb1;--hot-2:#ffb3cb;--btn-g1:#4fd1c5;--btn-g2:#2fa7a7;--on-btn:#062a2c;
-  --grad-text:linear-gradient(100deg,#e8f6f6 14%,#4fd1c5 58%,#ff8fb1);--callout:linear-gradient(120deg,#14383b,#34212c)}
-
-:root[data-theme=arcade][data-mode=dark]{color-scheme:dark;
+:root[data-mode=dark]{color-scheme:dark;
   --bg:#0b1020;--bg-img:linear-gradient(rgba(80,200,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(80,200,255,.055) 1px,transparent 1px),radial-gradient(1000px 560px at 100% 0,rgba(34,211,238,.2),transparent 70%),radial-gradient(800px 480px at 0 100%,rgba(163,230,53,.12),transparent 70%);
   --card:#121a2e;--card-2:#161f36;--panel:#17213a;--ink:#e6edff;--soft:rgba(230,237,255,.78);--faint:rgba(230,237,255,.58);
   --line:rgba(120,170,255,.18);--hair:rgba(120,170,255,.22);--hair-2:rgba(120,170,255,.08);--shadow:0 10px 28px rgba(0,0,0,.42);
@@ -428,7 +409,7 @@ body{background-size:var(--bg-size)}
   --g1:#22d3ee;--g2:#38bdf8;--g3:#a3e635;--hot:#a3e635;--hot-2:#fbbf24;--btn-g1:#22d3ee;--btn-g2:#3b82f6;--on-btn:#04141f;
   --grad-text:linear-gradient(100deg,#e6edff 14%,#22d3ee 56%,#a3e635);--callout:linear-gradient(120deg,#102842,#18223a 55%,#1d2b1b)}
 
-:root[data-theme=arcade][data-mode=light]{color-scheme:light;
+:root:not([data-mode=dark]){color-scheme:light;
   --bg:#f1f6ff;--bg-img:linear-gradient(rgba(37,99,235,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.07) 1px,transparent 1px),radial-gradient(1000px 560px at 100% 0,rgba(34,211,238,.34),transparent 70%),radial-gradient(800px 480px at 0 100%,rgba(163,230,53,.28),transparent 70%);
   --card:#ffffff;--card-2:#ffffff;--panel:#ffffff;--ink:#0f1b3a;--soft:rgba(15,27,58,.78);--faint:rgba(15,27,58,.58);
   --line:rgba(37,99,235,.15);--hair:rgba(37,99,235,.18);--hair-2:rgba(37,99,235,.07);--shadow:0 10px 28px rgba(37,99,235,.13);
@@ -441,11 +422,11 @@ body{background-size:var(--bg-size)}
 .hj-t h1,.home h2.ht,.callout h2,.m-head h2{background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
 .callout{background:var(--callout)}
 .btn.ghost{border:1px solid var(--line)}
-:root[data-theme=arcade] .btn{box-shadow:0 8px 22px color-mix(in srgb,var(--btn-g1) 38%,transparent)}
+.btn{box-shadow:0 8px 22px color-mix(in srgb,var(--btn-g1) 38%,transparent)}
 :root[data-mode=dark] .step .fig,:root[data-mode=dark] .sim canvas{background:#f4f7ff}
-:root[data-theme=arcade] .winb b:nth-child(1){background:#fb7185}
-:root[data-theme=arcade] .winb b:nth-child(2){background:#fbbf24}
-:root[data-theme=arcade] .winb b:nth-child(3){background:#a3e635}
+.winb b:nth-child(1){background:#fb7185}
+.winb b:nth-child(2){background:#fbbf24}
+.winb b:nth-child(3){background:#a3e635}
 .nm circle.core,.nm rect[fill="#fff"],.star circle{fill:var(--panel)}
 .opts .mode{padding:6px 11px}
 .opts .mode svg{width:15px;height:15px;flex:none}
