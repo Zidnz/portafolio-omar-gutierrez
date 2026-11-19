@@ -11,7 +11,7 @@ Portafolio web de **Omar Gutiérrez Escoto** (Ciudad de México), Data Scientist
 - Dos estilos a elegir desde el encabezado: **Pastel** (claro, turquesa y rosa) y **Arcade** (oscuro, con motivos de videojuegos, estadística y matemáticas). Ambos con detalles de juego (ventanas, misiones, inventario y cinta animada), ilustraciones vectoriales y tipografía suave.
 - Vista **Modelo 3D** en la portada (superficie de una distribución, puntos de datos y un dado), que se puede girar arrastrando. Usa Three.js, que se carga desde cdnjs solo al activarla.
 - Inventario de herramientas, con las de mi experiencia real en Veolia marcadas (Tableau, Salesforce CRM, CRM Analytics y Looker Studio).
-- Sin dependencias ni paso de compilación: HTML, CSS y JavaScript puros.
+- Sin paso de compilación: HTML, CSS y JavaScript puros (Three.js solo para la vista 3D).
 - Respeta `prefers-reduced-motion` y es responsive.
 
 ## Estructura
