@@ -462,3 +462,11 @@ body{background-size:var(--bg-size)}
 .cv a svg{width:14px;height:14px;color:var(--home);flex:none}
 .callout .cv{justify-content:center}
 footer a{color:inherit}
+
+/* ---------- Logos de GitHub y LinkedIn, y enlace al plan de estudios ---------- */
+.brand-ic{width:18px;height:18px;flex:none;display:block}
+.btn .brand-ic{width:16px;height:16px}
+.rail a{width:40px;height:36px}
+.rail a .brand-ic{width:19px;height:19px}
+.rail a:hover{transform:translateY(-2px)}
+@media (max-width:860px){.rail{display:flex;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:12px;padding:10px 16px}.rail hr{display:none}.rail svg:not(.brand-ic){width:26px}.rail small{display:none}}
