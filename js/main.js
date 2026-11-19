@@ -353,7 +353,7 @@ function mount3D(box){var T=window.THREE,r;
 
 function infoGrid(){
  var HOW=[['flag','Entender el problema','Antes de tocar datos: qué decisión hay que tomar y quién la toma.'],['db','Limpiar y explorar','Duplicados, etapas, monedas y patrones raros salen a la luz.'],['tree','Modelar y poner a prueba','Evaluar con el futuro, comparar contra una regla simple, desconfiar de lo perfecto.'],['chart','Explicar y decidir','Un tablero o una cola de trabajo que alguien pueda usar mañana.']],
-  NUM=[['590,540','transacciones reales analizadas'],['115','pruebas automáticas en un proyecto'],['4','proyectos de punta a punta'],['1 año','como Junior Data Analyst en Veolia']],
+  NUM=[['590,540','transacciones reales analizadas'],['115','pruebas automáticas en un proyecto'],['4','proyectos de punta a punta'],['Desde 2025','Junior Data Analyst en Veolia']],
   RUL=[['Si el resultado es perfecto, sospecha.','Un recall del 100% casi siempre esconde una fuga de información.'],['Evalúa con el futuro, no con el azar.','Partir los datos por tiempo evita resultados demasiado optimistas.'],['Una regla simple también es un modelo.','Si no supera a la regla, el modelo no se ha ganado su lugar.']];
  return '<div class="hpa-grid">'+
  '<div><h3>Cómo trabajo</h3><ol class="how">'+HOW.map(function(h,i){return '<li style="--k:'+i+'"><span class="hi">'+ic(h[0])+'</span><div><b>'+h[1]+'</b><small>'+h[2]+'</small></div></li>'}).join('')+'</ol></div>'+
@@ -363,7 +363,7 @@ function infoGrid(){
 function heroHTML(){var tk='Ahora corriendo: lakehouse de fraude en Spark ♪ · · · batch = streaming ✓ · · · ETo del día: 7.1 mm · · · regla de 40 h contra modelos: sin ganador claro · · · QchauCoin = 1.00 · · · gracias por visitar ✦ · · · ';
  return '<div class="h-hero"><div class="wrap hj">'+
  '<aside class="rail"><b>UNRC</b><small>7.º SEM</small>'+artDie('')+'<hr><a href="'+GH+'" target="_blank" rel="noopener noreferrer">GH</a><a href="'+LI+'" target="_blank" rel="noopener noreferrer">IN</a></aside>'+
- '<div class="hj-t"><p class="tagp">OMAR GUTIÉRREZ ESCOTO</p><h1>Datos que<br>toman<br>decisiones</h1><p class="lede">Estudiante de Ciencia de Datos para el Negocio en la UNRC y ex Junior Data Analyst en Veolia. Busco la historia escondida en los datos, la pruebo con rigor y la cuento para que cualquiera la entienda.</p>'+
+ '<div class="hj-t"><p class="tagp">OMAR GUTIÉRREZ ESCOTO</p><h1>Datos que<br>toman<br>decisiones</h1><p class="lede">Estudiante de Ciencia de Datos para el Negocio en la UNRC y Junior Data Analyst en Veolia. Busco la historia escondida en los datos, la pruebo con rigor y la cuento para que cualquiera la entienda.</p>'+
  '<div class="cta"><button class="btn" type="button" data-scroll="levels-h">Ver misiones ›</button><a class="btn ghost" href="'+GH+'" target="_blank" rel="noopener noreferrer">GitHub ✿</a></div></div>'+
  heroScene()+'</div>'+
  '<div class="wrap"><div class="ticker">'+artRadio()+'<div class="tk"><div class="tk-in"><span>'+tk+'</span><span>'+tk+'</span></div></div><span class="eq"><i></i><i></i><i></i><i></i></span></div></div></div>'+
