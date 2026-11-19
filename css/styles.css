@@ -470,3 +470,8 @@ footer a{color:inherit}
 .rail a .brand-ic{width:19px;height:19px}
 .rail a:hover{transform:translateY(-2px)}
 @media (max-width:860px){.rail{display:flex;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:12px;padding:10px 16px}.rail hr{display:none}.rail svg:not(.brand-ic){width:26px}.rail small{display:none}}
+
+/* ---------- Selector de idioma ---------- */
+.opts .lang{display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
+.opts .lang button{border:0;background:transparent;color:var(--soft);padding:4px 10px;font:700 11px var(--f-label);letter-spacing:.08em}
+.opts .lang button[aria-pressed=true]{background:var(--home);color:var(--on-btn)}
