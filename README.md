@@ -10,7 +10,8 @@ Portafolio web de **Omar Gutiérrez Escoto** (Ciudad de México), Data Scientist
 - Simuladores que corren en el navegador (umbral de fraude, parcela de 60 días, mapa de nodos, cadena de bloques y precio).
 - Dos estilos, **Arcade** (videojuegos, estadística y matemáticas; el predeterminado) y **Pastel** (turquesa y rosa), cada uno en modo **claro u oscuro**, con un botón en el encabezado. La elección se guarda en el navegador.
 - Títulos con degradado de color y fondo con rejilla de gráfica en las cuatro combinaciones.
-- Se adapta a celulares y a pantallas grandes (a partir de 1400 px el contenido se amplía para no dejar márgenes vacíos). Ambos con detalles de juego (ventanas, misiones, inventario y cinta animada), ilustraciones vectoriales y tipografía suave.
+- Se adapta a celulares y a pantallas grandes (a partir de 1400 px el contenido se amplía para no dejar márgenes vacíos).
+- Detalles de juego (ventanas, misiones, inventario y cinta animada), ilustraciones vectoriales y tipografía suave en ambos estilos.
 - Vista **Modelo 3D** en la portada (superficie de una distribución, puntos de datos y un dado), que se puede girar arrastrando. Usa Three.js, que se carga desde cdnjs solo al activarla.
 - Inventario de herramientas, con las de mi experiencia real en Veolia marcadas (Tableau, Salesforce CRM, CRM Analytics y Looker Studio).
 - Sin paso de compilación: HTML, CSS y JavaScript puros (Three.js solo para la vista 3D).
