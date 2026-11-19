@@ -353,14 +353,6 @@ dialog .dc{display:flex;gap:12px;align-items:center;justify-content:space-betwee
 .opts button{display:inline-flex;align-items:center;gap:6px;border:var(--bw) solid var(--line);border-radius:999px;background:var(--card-2);color:var(--ink);font:600 12px var(--f-label);padding:6px 12px;cursor:pointer}
 .opts button i{width:10px;height:10px;border-radius:50%;background:var(--a)}
 .opts button[aria-pressed=true]{background:var(--home);border-color:var(--home);color:var(--on-btn)}
-.hj-s .viewsw{position:absolute;right:0;top:-6px;z-index:5;display:flex;gap:4px;padding:4px;border-radius:999px;background:var(--panel);box-shadow:var(--shadow)}
-.hj-s .viewsw button{border:0;border-radius:999px;background:transparent;color:var(--soft);font:700 11px var(--f-label);letter-spacing:.06em;padding:6px 12px;cursor:pointer}
-.hj-s .viewsw button[aria-pressed=true]{background:var(--home);color:var(--on-btn)}
-.hj-s .gl{position:absolute;inset:0 0 14px 0;z-index:2;cursor:grab;touch-action:pan-y}
-.hj-s .gl:active{cursor:grabbing}
-.hj-s .gl canvas{display:block;width:100%;height:100%}
-.hj-s .glhint{position:absolute;left:50%;bottom:22px;translate:-50% 0;z-index:3;font:500 11px var(--f-mono);color:var(--faint);pointer-events:none;white-space:nowrap}
-.hj-s.is3d>div:not(.gl):not(.viewsw):not(.glhint){visibility:hidden}
 @media (max-width:860px){.opts button span{display:none}.opts button{padding:6px 9px}}
 
 /* ---------- Portada: Cómo trabajo, En números y Mis reglas ---------- */
@@ -445,7 +437,6 @@ body{background-size:var(--bg-size)}
   .hj-t h1{font-size:clamp(40px,12vw,66px)}
   .hj-t .lede{max-width:none}
   .hj-s{height:auto;aspect-ratio:560/440;margin-top:14px}
-  .hj-s .viewsw{top:-14px}
   .ticker{padding:8px 14px;margin-top:16px;gap:10px}
   .home .shd{margin-top:40px}
   .home h2.ht{font-size:clamp(24px,7vw,34px)}

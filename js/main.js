@@ -244,7 +244,7 @@ go((location.hash||'#inicio').slice(1),true);
 
 /* ================= INICIO: portada, secciones y contacto ================= */
 var GH='https://github.com/Zidnz',LI='https://www.linkedin.com/in/omar-guti%C3%A9rrez-88507527a/';
-var MODE=store('zidnz-mode')==='light'?'light':'dark',VIEW=store('zidnz-view')==='3d'?'3d':'2d';
+var MODE=store('zidnz-mode')==='light'?'light':'dark';
 var RES={fraude:'53.6% del fraude revisando 3.35%',milpin:'MVP desplegado, 115 pruebas',observatorio:'La regla simple empató a los modelos',qchaucoin:'Cadena, monedero y modelo de precio'};
 
 /* Ilustraciones vectoriales (SVG propio, sin pixeles) */
@@ -286,71 +286,20 @@ function artScatter(cls){var s=7,r=function(){s=(s*9301+49297)%233280;return s/2
   '<text x="22" y="26" font-family="DM Mono,monospace" font-size="11" fill="#a3e635">r = 0.87</text></svg>'}
 function artChip(t,cls){return '<div class="chip3 '+cls+'">'+t+'</div>'}
 
-function viewSwitch(){return '<div class="viewsw" role="group" aria-label="Tipo de vista"><button type="button" data-view="2d" aria-pressed="'+(VIEW==='2d')+'">Ilustración</button><button type="button" data-view="3d" aria-pressed="'+(VIEW==='3d')+'">Modelo 3D</button></div>'}
 function heroScene(){
- return '<div class="hj-s arc" id="hero-scene"><div class="orb"></div>'+viewSwitch()+
+ return '<div class="hj-s arc" id="hero-scene"><div class="orb"></div>'+
   '<div class="bell">'+artBell('')+'</div><div class="scat">'+artScatter('')+'</div>'+
   '<div class="pad">'+artGamepad('')+'</div><div class="die">'+artDie('')+'</div><div class="comp">'+artLaptop('')+'</div>'+
   '<div class="bubble">NIVEL 7 · XP<i></i></div>'+
   '<div class="c1">'+artChip('Σ','')+'</div><div class="c2">'+artChip('∫','')+'</div><div class="c3">'+artChip('π','')+'</div><div class="c4">'+artChip('p&lt;.05','')+'</div></div>';}
 
-/* --- Estilo, vista y modelo 3D (Three.js se carga solo si se pide la vista 3D) --- */
+/* --- Modo claro y oscuro --- */
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 function applyLook(){var h=document.documentElement;h.setAttribute('data-mode',MODE);
  var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',MODE==='dark'?'#0b1020':'#f1f6ff')}
 function setMode(m){MODE=m==='light'?'light':'dark';store('zidnz-mode',MODE);applyLook();renderHome()}
 var ICO_MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/></svg>',ICO_SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
 function renderOpts(){$('opts').innerHTML='<button type="button" class="mode" data-toggle-mode="1" aria-label="'+(MODE==='dark'?'Cambiar a modo claro':'Cambiar a modo oscuro')+'" title="'+(MODE==='dark'?'Modo claro':'Modo oscuro')+'">'+(MODE==='dark'?ICO_SUN:ICO_MOON)+'<span>'+(MODE==='dark'?'Claro':'Oscuro')+'</span></button>'}
-var gl3d=null,threeP=null;
-function loadThree(){if(window.THREE)return Promise.resolve();if(threeP)return threeP;
- threeP=new Promise(function(ok,no){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';s.onload=ok;s.onerror=function(){threeP=null;no(new Error('three'))};document.head.appendChild(s)});return threeP}
-function stop3D(){if(gl3d){gl3d();gl3d=null}}
-function setView(v){VIEW=v==='3d'?'3d':'2d';store('zidnz-view',VIEW);applyView()}
-function applyView(){var sc=$('hero-scene');if(!sc)return;stop3D();
- [].forEach.call(sc.querySelectorAll('.gl,.glhint'),function(n){n.remove()});
- [].forEach.call(sc.querySelectorAll('[data-view]'),function(b){b.setAttribute('aria-pressed',b.dataset.view===VIEW)});
- sc.classList.toggle('is3d',VIEW==='3d');if(VIEW!=='3d')return;
- var box=el('div','gl');box.setAttribute('role','img');box.setAttribute('aria-label','Modelo 3D interactivo: superficie de una distribución con puntos de datos y un dado. Arrastra para girar.');sc.appendChild(box);
- var hint=el('div','glhint','Arrastra para girar');sc.appendChild(hint);
- loadThree().then(function(){if(VIEW!=='3d'||!box.isConnected)return;var stop=mount3D(box);if(stop)gl3d=stop;else fail()}).catch(fail);
- function fail(){VIEW='2d';applyView();hint=null}}
-function mount3D(box){var T=window.THREE,r;
- try{r=new T.WebGLRenderer({antialias:true,alpha:true})}catch(e){return null}
- var css=getComputedStyle(document.documentElement),col=function(v,d){return new T.Color((css.getPropertyValue(v)||'').trim()||d)},
-  cA=col('--home','#2fa7a7'),cB=col('--hot-2','#ffb3cb'),cC=col('--g3','#44b8b8'),dark=MODE==='dark';
- var w=box.clientWidth||520,h=box.clientHeight||420;
- r.setPixelRatio(Math.min(window.devicePixelRatio||1,2));r.setSize(w,h);box.appendChild(r.domElement);
- var sc=new T.Scene(),cam=new T.PerspectiveCamera(38,w/h,.1,100);cam.position.set(0,4.2,12.6);cam.lookAt(0,.5,0);
- sc.add(new T.AmbientLight(0xffffff,.75));var dl=new T.DirectionalLight(0xffffff,.95);dl.position.set(4,8,6);sc.add(dl);
- var g=new T.Group();g.rotation.x=.12;sc.add(g);
- function f(x,z){return 1.6*Math.exp(-((x-1)*(x-1)+(z+.5)*(z+.5))/2.2)+1.05*Math.exp(-((x+1.7)*(x+1.7)+(z-1.2)*(z-1.2))/1.5)-.3*Math.cos(x*1.7)*Math.cos(z*1.7)*Math.exp(-(x*x+z*z)/14)}
- var N=34,S=7,geo=new T.PlaneGeometry(S,S,N,N);geo.rotateX(-Math.PI/2);
- var pos=geo.attributes.position,ys=[],i,lo=9,hi=-9;
- for(i=0;i<pos.count;i++){var yy=f(pos.getX(i),pos.getZ(i));pos.setY(i,yy);ys.push(yy);if(yy<lo)lo=yy;if(yy>hi)hi=yy}
- var cols=[],tmp=new T.Color();
- for(i=0;i<ys.length;i++){var k=(ys[i]-lo)/(hi-lo);if(k<.5)tmp.copy(cC).lerp(cA,k*2);else tmp.copy(cA).lerp(cB,(k-.5)*2);cols.push(tmp.r,tmp.g,tmp.b)}
- geo.setAttribute('color',new T.Float32BufferAttribute(cols,3));geo.computeVertexNormals();
- var surf=new T.Mesh(geo,new T.MeshStandardMaterial({vertexColors:true,roughness:.55,metalness:.1,side:T.DoubleSide,transparent:true,opacity:.94}));
- var wire=new T.LineSegments(new T.WireframeGeometry(geo),new T.LineBasicMaterial({color:dark?0xcfe9ff:0xffffff,transparent:true,opacity:dark?.16:.28}));
- g.add(surf);g.add(wire);
- var grid=new T.GridHelper(S+1,14,dark?0x3b5a8a:0xbfeeee,dark?0x24365a:0xe3f8f8);grid.position.y=-.05;g.add(grid);
- var pts=new T.InstancedMesh(new T.SphereGeometry(.07,10,10),new T.MeshStandardMaterial({color:cB,roughness:.4,emissive:cB,emissiveIntensity:dark?.45:.12}),90),m4=new T.Matrix4(),s=11,rnd=function(){s=(s*9301+49297)%233280;return s/233280};
- for(i=0;i<90;i++){var px=(rnd()-.5)*6.2,pz=(rnd()-.5)*6.2;m4.setPosition(px,f(px,pz)+.12+rnd()*.5,pz);pts.setMatrixAt(i,m4)}
- g.add(pts);
- var die=new T.Mesh(new T.IcosahedronGeometry(.85,0),new T.MeshStandardMaterial({color:cA,flatShading:true,roughness:.3,metalness:.25}));
- die.position.set(-2.5,2.9,1.2);die.add(new T.LineSegments(new T.EdgesGeometry(die.geometry),new T.LineBasicMaterial({color:0xffffff})));g.add(die);
- var drag=false,lx=0,ly=0,idle=0,raf=0,RMo=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
- function down(e){drag=true;lx=e.clientX;ly=e.clientY;try{box.setPointerCapture(e.pointerId)}catch(x){}}
- function move(e){if(!drag)return;g.rotation.y+=(e.clientX-lx)*.01;g.rotation.x=Math.max(-.2,Math.min(.9,g.rotation.x+(e.clientY-ly)*.006));lx=e.clientX;ly=e.clientY;idle=0}
- function up(){drag=false}
- box.addEventListener('pointerdown',down);box.addEventListener('pointermove',move);box.addEventListener('pointerup',up);box.addEventListener('pointercancel',up);
- function size(){var W=box.clientWidth,H=box.clientHeight;if(!W||!H)return;r.setSize(W,H);cam.aspect=W/H;cam.updateProjectionMatrix();r.render(sc,cam)}
- window.addEventListener('resize',size);
- function tick(){raf=requestAnimationFrame(tick);if(!drag&&!RMo){g.rotation.y+=.004;idle++}die.rotation.x+=.012;die.rotation.y+=.017;die.position.y=2.9+Math.sin(performance.now()/700)*.18;r.render(sc,cam)}
- r.render(sc,cam);tick();
- return function(){cancelAnimationFrame(raf);window.removeEventListener('resize',size);box.removeEventListener('pointerdown',down);box.removeEventListener('pointermove',move);
-  [geo,surf.material,wire.geometry,wire.material,pts.geometry,pts.material,die.geometry,die.material,grid.geometry].forEach(function(o){if(o&&o.dispose)o.dispose()});r.dispose();if(r.domElement.parentNode)r.domElement.parentNode.removeChild(r.domElement)}}
-
 function infoGrid(){
  var HOW=[['flag','Entender el problema','Antes de tocar datos: qué decisión hay que tomar y quién la toma.'],['db','Limpiar y explorar','Duplicados, etapas, monedas y patrones raros salen a la luz.'],['tree','Modelar y poner a prueba','Evaluar con el futuro, comparar contra una regla simple, desconfiar de lo perfecto.'],['chart','Explicar y decidir','Un tablero o una cola de trabajo que alguien pueda usar mañana.']],
   NUM=[['590,540','transacciones reales analizadas'],['115','pruebas automáticas en un proyecto'],['4','proyectos de punta a punta'],['1 año','como Junior Data Analyst en Veolia']],
@@ -375,7 +324,7 @@ var WORK=[['db','Datos reales','Limpieza de CRM real de varias unidades de negoc
  ['chart','Tableros','Tableau, CRM Analytics y Looker Studio en Veolia, y Power BI y sitios propios en mis proyectos, para que alguien decida con los números.','screen']];
 
 function renderHome(){
- $('hero').innerHTML=heroHTML();applyView();renderOpts();
+ $('hero').innerHTML=heroHTML();renderOpts();
  $('what').innerHTML=WORK.map(function(w){return '<div class="wk"><span class="wi">'+ic(w[3])+'</span><h4>'+w[1]+'</h4><p>'+w[2]+'</p></div>'}).join('');
  $('levels').innerHTML='';
  P.forEach(function(p){var x=X[p.id];
@@ -386,9 +335,8 @@ function renderHome(){
  var cur=Object.keys(views).filter(function(k){return !views[k].hidden})[0]||'inicio';go(cur,true);
  setTimeout(function(){window.dispatchEvent(new Event('resize'))},60)}
 
-document.addEventListener('click',function(e){var t=e.target.closest('[data-go],[data-scroll],[data-view],[data-toggle-mode]');if(!t)return;
+document.addEventListener('click',function(e){var t=e.target.closest('[data-go],[data-scroll],[data-toggle-mode]');if(!t)return;
  if(t.dataset.toggleMode){setMode(MODE==='dark'?'light':'dark');return}
- if(t.dataset.view){setView(t.dataset.view);return}
  if(t.dataset.go){go(t.dataset.go);return}
  var n=$(t.dataset.scroll);if(n)n.scrollIntoView({behavior:RM?'auto':'smooth',block:'start'})});
 
