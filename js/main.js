@@ -235,338 +235,97 @@ P.forEach(function(p){var x=X[p.id];
 (function(){var G=[['Lenguajes',[['py','Python',[0,1,2,3]],['db','SQL',[1,2]],['r','R',[2,3]],['js','JavaScript',[1,2,3]]]],
   ['Datos y big data',[['stream','Kafka',[0]],['spark','Spark + Structured Streaming',[0]],['layers','Delta Lake',[0]],['db','PostgreSQL',[0,1]],['map','PostGIS',[1]],['db','SQLite (esquema estrella)',[2]],['doc','MongoDB',[3]]]],
   ['Modelos y estadística',[['tree','Spark MLlib (GBT y logística)',[0]],['tree','XGBoost',[1]],['net','Grafos, colas M/M/c y Bayes',[0]],['chart','scikit-learn',[1,2]],['net','Keras',[3]],['survey','Encuestas con diseño muestral',[2]]]],
-  ['Producto',[['api','FastAPI y Express',[1,3]],['map','Leaflet',[1]],['chart','Power BI',[1,2]],['key','RSA, JWT y bcrypt',[3]]]]];
-  $('inv').innerHTML=G.map(function(g){return '<div><h4>'+g[0]+'</h4><ul>'+g[1].map(function(t){return '<li>'+ic(t[0])+t[1]+'<span>'+P.map(function(p,i){return '<i style="background:'+(t[2].indexOf(i)>=0?p.c:'transparent')+'" title="'+short[p.id]+'"></i>'}).join('')+'</span></li>'}).join('')+'</ul></div>'}).join('')})();
+  ['Producto',[['api','FastAPI y Express',[1,3]],['map','Leaflet',[1]],['chart','Power BI',[1,2]],['key','RSA, JWT y bcrypt',[3]],['chart','Tableau','veolia'],['cloud','Salesforce CRM','veolia'],['layers','CRM Analytics','veolia'],['screen','Looker Studio','veolia']]]];
+  $('inv').innerHTML=G.map(function(g){return '<div><h4>'+g[0]+'</h4><ul>'+g[1].map(function(t){return '<li>'+ic(t[0])+t[1]+'<span>'+(t[2]==='veolia'?'<b class="vb" title="Herramienta de mi experiencia real en Veolia">Veolia</b>':P.map(function(p,i){return '<i style="background:'+(t[2].indexOf(i)>=0?p.c:'transparent')+'" title="'+short[p.id]+'"></i>'}).join(''))+'</span></li>'}).join('')+'</ul></div>'}).join('')})();
 
 document.querySelector('.brand').addEventListener('click',function(e){e.preventDefault();go('inicio')});
 window.addEventListener('hashchange',function(){go(location.hash.slice(1),true)});
 go((location.hash||'#inicio').slice(1),true);
 
-/* ================= PIXEL ART (motor propio) ================= */
-var RAMP={
- blue:{o:'#1f3566',d:'#2b4a8f',m:'#5b7fc7',l:'#b9cdf0',w:'#f4f7fd'},
- rose:{o:'#2b1a24',d:'#a8325f',m:'#e8559a',l:'#f7b6d3',w:'#fff0f6'},
- red:{o:'#1f3566',d:'#9c3a50',m:'#d16a80',l:'#f3c6d0',w:'#fdf2f4'},
- sage:{o:'#1f3566',d:'#256b5a',m:'#4f9e86',l:'#bfe3d6',w:'#effaf6'},
- lav:{o:'#1f3566',d:'#4f4194',m:'#8a79c9',l:'#d9d1f2',w:'#f5f2fc'},
- gold:{o:'#1f3566',d:'#8a5f14',m:'#cf9a35',l:'#f1dba6',w:'#fdf7e8'},
- teal:{o:'#1f2b3a',d:'#1f7f80',m:'#44b8b8',l:'#bfeeee',w:'#f2fbfb'},
- leaf:{o:'#2f2a24',d:'#3f7a34',m:'#6baf5d',l:'#a9d68f',w:'#eaf6df'}};
-var ORD='wlmd';
-function cov(s,x,y){var dx,dy;switch(s.t){
- case'c':dx=x-s.x;dy=y-s.y;return dx*dx+dy*dy<=s.r*s.r&&(!s.cut||y<=s.cut);
- case'e':var a=s.a||0;dx=x-s.x;dy=y-s.y;var u=dx*Math.cos(a)+dy*Math.sin(a),v=-dx*Math.sin(a)+dy*Math.cos(a);return u*u/(s.rx*s.rx)+v*v/(s.ry*s.ry)<=1&&(!s.cut||y<=s.cut);
- case'r':return x>=s.x&&x<s.x+s.w&&y>=s.y&&y<s.y+s.h;
- case'p':var p=s.p,inn=false;for(var i=0,j=p.length-1;i<p.length;j=i++){if(((p[i][1]>y)!==(p[j][1]>y))&&(x<(p[j][0]-p[i][0])*(y-p[i][1])/(p[j][1]-p[i][1])+p[i][0]))inn=!inn}return inn;
- case'l':for(var k=0;k<s.p.length-1;k++){var ax=s.p[k][0],ay=s.p[k][1],vx=s.p[k+1][0]-ax,vy=s.p[k+1][1]-ay,t=Math.max(0,Math.min(1,((x-ax)*vx+(y-ay)*vy)/(vx*vx+vy*vy))),qx=ax+vx*t-x,qy=ay+vy*t-y;if(qx*qx+qy*qy<=s.w*s.w/4)return true}return false;
- case'g':var row=s.g[Math.floor(y-s.y)];if(!row)return false;var ch=row[Math.floor(x-s.x)];return !!ch&&ch!=='.'}
- return false}
-function pix(def,ramp,cls,attrs){
- var W=def[0],H=def[1],shapes=def[2],R=typeof ramp==='string'?RAMP[ramp]:ramp,N=W*H,id=new Int16Array(N).fill(-1),col=new Array(N),
-     bb=shapes.map(function(){return[1e9,1e9,-1e9,-1e9]}),x,y;
- shapes.forEach(function(s,si){for(y=0;y<H;y++)for(x=0;x<W;x++)if(cov(s,x+.5,y+.5)){id[y*W+x]=si;var b=bb[si];if(x<b[0])b[0]=x;if(y<b[1])b[1]=y;if(x>b[2])b[2]=x;if(y>b[3])b[3]=y}});
- for(y=0;y<H;y++)for(x=0;x<W;x++){var i=y*W+x,si=id[i];if(si<0)continue;var s=shapes[si];
-  if(s.t==='g'){var ch=s.g[y-s.y][x-s.x],k=(s.m&&s.m[ch])||ch;col[i]=R[k]||k;continue}
-  var edge=false;
-  if(!s.no)for(var q=0;q<4;q++){var nx=x+[1,-1,0,0][q],ny=y+[0,0,1,-1][q];if(nx<0||ny<0||nx>=W||ny>=H){edge=true;break}var nj=id[ny*W+nx];if(nj<0||(nj<si&&!(s.k&&shapes[nj].k===s.k))){edge=true;break}}
-  if(edge){col[i]=R.o;continue}
-  var f=s.f||'l',o=ORD.indexOf(f);
-  if(s.sh&&o>=0){var b=bb[si],cx=(b[0]+b[2])/2,cy=(b[1]+b[3])/2,v=((x-cx)/Math.max(1,(b[2]-b[0])/2)+(y-cy)/Math.max(1,(b[3]-b[1])/2))/2;
-    if(v<-.38)f=ORD[Math.max(0,o-1)];else if(v>.42)f=ORD[Math.min(3,o+1)]}
-  col[i]=R[f]||f}
- var out='';for(y=0;y<H;y++){var x0=0;while(x0<W){var c=col[y*W+x0];if(!c){x0++;continue}var x1=x0+1;while(x1<W&&col[y*W+x1]===c)x1++;out+='<rect x="'+x0+'" y="'+y+'" width="'+(x1-x0)+'" height="1" fill="'+c+'"/>';x0=x1}}
- return '<svg class="px '+(cls||'')+'" viewBox="0 0 '+W+' '+H+'" shape-rendering="crispEdges" aria-hidden="true" '+(attrs||'')+'>'+out+'</svg>'}
-
-/* --- sprites originales --- */
-function dFlower(sc){sc=sc||1;var S=[],c=function(v){return v*sc};
- S.push({t:'l',p:[[c(36),c(40)],[c(37),c(58)],[c(34),c(76)],[c(35),c(96)]],w:Math.max(1.4,c(3.2)),f:'d'});
- S.push({t:'e',x:c(25),y:c(66),rx:c(13),ry:c(4.6),a:.52,f:'m',sh:1});S.push({t:'e',x:c(48),y:c(58),rx:c(13),ry:c(4.4),a:-.48,f:'m',sh:1});
- if(sc>.6){S.push({t:'l',p:[[c(15),c(60)],[c(34),c(71)]],w:1,f:'d',no:1});S.push({t:'l',p:[[c(38),c(64)],[c(59),c(52)]],w:1,f:'d',no:1})}
- var P=[];for(var k=0;k<6;k++){var a=(-90+k*60+12)*Math.PI/180;P.push(a)}P.sort(function(a,b){return Math.sin(a)-Math.sin(b)});
- P.forEach(function(a){S.push({t:'e',x:c(36)+Math.cos(a)*c(13),y:c(30)+Math.sin(a)*c(11),rx:c(13.5),ry:c(8.5),a:a,f:'l',sh:1})});
- S.push({t:'c',x:c(36),y:c(30),r:c(7.5),f:'d'});S.push({t:'c',x:c(35),y:c(29),r:c(4.2),f:'m',no:1});
- return [Math.ceil(c(72)),Math.ceil(c(96)),S]}
-function dTiny(){return[11,16,[{t:'l',p:[[5.5,8],[5.5,16]],w:1.4,f:'d'},{t:'e',x:3,y:12.5,rx:3,ry:1.4,a:.6,f:'m'},{t:'c',x:5.5,y:2.8,r:2.4,f:'l',k:'f'},{t:'c',x:2.8,y:5.2,r:2.4,f:'l',k:'f'},{t:'c',x:8.2,y:5.2,r:2.4,f:'l',k:'f'},{t:'c',x:4,y:8,r:2.2,f:'l',k:'f'},{t:'c',x:7,y:8,r:2.2,f:'l',k:'f'},{t:'c',x:5.5,y:5.5,r:1.6,f:'d'}]]}
-var G_SPARK=['...x...','...x...','..xxx..','xxxxxxx','..xxx..','...x...','...x...'];
-function dSpark(){return[7,7,[{t:'g',x:0,y:0,g:G_SPARK,m:{x:'m'}}]]}
-function dHeart(){return[7,6,[{t:'g',x:0,y:0,g:['.oo.oo.','omlmmmo','ommmmmo','.ommmo.','..omo..','...o...']}]]}
-function dComputer(){return[40,40,[{t:'r',x:0,y:32,w:40,h:8,f:'w'},{t:'r',x:5,y:35,w:11,h:1,f:'m',no:1},{t:'r',x:24,y:35,w:11,h:1,f:'m',no:1},
- {t:'r',x:9,y:28,w:20,h:5,f:'l',sh:1},{t:'r',x:20,y:30,w:6,h:1,f:'d',no:1},{t:'r',x:15,y:25,w:8,h:4,f:'l'},
- {t:'r',x:4,y:2,w:30,h:24,f:'w',sh:1},{t:'r',x:8,y:5,w:22,h:16,f:'m'},{t:'r',x:9,y:6,w:20,h:2,f:'l',no:1},
- {t:'g',x:13,y:10,g:['.ww.....ww.','.ww.....ww.','...........','.w.......w.','..wwwwwww..'],m:{w:'w'}},{t:'r',x:27,y:23,w:3,h:1,f:'d',no:1}]]}
-function dCat(){return[18,18,[{t:'l',p:[[13,16],[17,12],[16,7]],w:2.2,f:'w'},{t:'e',x:9,y:13,rx:5.6,ry:4.6,f:'w'},
- {t:'c',x:8.5,y:7.5,r:4.7,f:'w',k:'h'},{t:'p',p:[[3.6,6],[4.4,.6],[7.6,3.6]],f:'w',k:'h'},{t:'p',p:[[9.6,3.6],[12.8,.6],[13.4,6]],f:'w',k:'h'},
- {t:'g',x:6,y:7,g:['o...o','..m..'],m:{o:'o',m:'m'}},{t:'g',x:6,y:16,g:['o..o'],m:{o:'o'}}]]}
-function dMush(){return[14,14,[{t:'r',x:4.5,y:7,w:5,h:7,f:'w'},{t:'e',x:7,y:7.5,rx:6.8,ry:6,f:'m',sh:1,cut:7.6},{t:'g',x:4,y:3,g:['w....','.....','...w.'],m:{w:'w'}}]]}
-function dCrystal(){return[14,18,[{t:'p',p:[[7,.4],[13.4,6],[11,17.6],[3,17.6],[.6,6]],f:'l',sh:1},{t:'l',p:[[7,1.5],[7,16.5]],w:1,f:'m',no:1},{t:'l',p:[[1.5,6.2],[12.5,6.2]],w:1,f:'w',no:1}]]}
-function dMailbox(){return[26,34,[{t:'r',x:11,y:18,w:4,h:16,f:'d'},{t:'r',x:2,y:8,w:22,h:12,f:'m',sh:1,k:'mb'},{t:'e',x:13,y:8.5,rx:11,ry:6,f:'m',cut:8.5,k:'mb'},
- {t:'r',x:6,y:2,w:9,h:7,f:'w'},{t:'r',x:22,y:4,w:2,h:9,f:'d'},{t:'r',x:22,y:4,w:4,h:3,f:'d'}]]}
-function dRadio(){return[26,16,[{t:'l',p:[[5,3.5],[7,.8],[19,.8],[21,3.5]],w:1.4,f:'d'},{t:'r',x:1,y:3,w:24,h:12,f:'l',sh:1},{t:'c',x:7,y:9.5,r:3.6,f:'m'},{t:'c',x:19,y:9.5,r:3.6,f:'m'},{t:'r',x:11,y:6,w:4,h:2,f:'d',no:1}]]}
-function dPot(){return[16,24,[{t:'l',p:[[8,14],[8,6]],w:1.4,f:'d'},{t:'e',x:5,y:10,rx:3,ry:1.4,a:.5,f:'m'},{t:'e',x:11,y:9,rx:3,ry:1.4,a:-.5,f:'m'},
- {t:'c',x:8,y:4,r:3.2,f:'l',sh:1},{t:'c',x:8,y:4,r:1.2,f:'d',no:1},{t:'p',p:[[3,15],[13,15],[12,23.5],[4,23.5]],f:'m',sh:1},{t:'r',x:2,y:13,w:12,h:3,f:'l'}]]}
-function dTree(){return[22,26,[{t:'r',x:9.5,y:16,w:3,h:10,f:'d'},{t:'c',x:11,y:10,r:8,f:'m',sh:1,k:'t'},{t:'c',x:6,y:13,r:5,f:'m',sh:1,k:'t'},{t:'c',x:16,y:13,r:5,f:'m',sh:1,k:'t'}]]}
-function dCloud(){return[30,12,[{t:'g',x:0,y:0,g:['.........wwwwww...............','.......wwwwwwwwww.............','.....wwwwwwwwwwwwww..wwwww....','..wwwwwwwwwwwwwwwwwwwwwwwwww..','.wwwwwwwwwwwwwwwwwwwwwwwwwwww.','wwwwwwwwwwwwwwwwwwwwwwwwwwwwww','.llllllllllllllllllllllllllll.'],m:{w:'#ffffff',l:'w'}}]]}
-function dFlag(){return[16,22,[{t:'r',x:3,y:2,w:1.6,h:20,f:'d'},{t:'p',p:[[4.6,2],[14,5],[4.6,8.6]],f:'m'}]]}
-function dDato(){return[30,30,[{t:'r',x:5,y:7,w:20,h:17,f:'l',k:'db'},{t:'e',x:15,y:24,rx:10,ry:4.2,f:'l',k:'db',sh:1},{t:'e',x:15,y:7,rx:10,ry:4.2,f:'w'},
- {t:'l',p:[[5.5,15.5],[24.5,15.5]],w:1,f:'m',no:1},{t:'g',x:10,y:11,g:['oo......oo','ow......ow'],m:{o:'o',w:'w'}},{t:'g',x:8,y:16,g:['mm..o..o..mm','.....oo.....'],m:{m:'m',o:'o'}},
- {t:'g',x:2,y:13,g:['o','.o'],m:{o:'o'}},{t:'g',x:27,y:13,g:['.o','o'],m:{o:'o'}}]]}
-var G_AV=['...oooooo...','..ohhhhhho..','.ohhhhhhhho.','.ohssssssho.','.ohsossosho.','.ohssssssho.','..ossoosso..','...oossoo...','.occccccccо.','occccccccccо','occccccccccо','.osccccccso.','..oppppppo..','..oppppppo..','..opo..opo..','..ooo..ooo..'];
-function dAvatar(c){return[12,16,[{t:'g',x:0,y:0,g:G_AV.map(function(r){return r.replace(/о/g,'o').padEnd(12,'.').slice(0,12)}),m:{h:'#2b2238',s:'#f2c6a3',c:c||'m',p:'#3c4a73',o:'o'}}]]}
-function dBalloon(){return[18,26,[{t:'l',p:[[6,17],[7.5,22]],w:.8,f:'d'},{t:'l',p:[[12,17],[10.5,22]],w:.8,f:'d'},{t:'r',x:6.5,y:21,w:5,h:4,f:'d'},
- {t:'e',x:9,y:9,rx:8,ry:9,f:'l',sh:1,k:'b'},{t:'e',x:9,y:9,rx:3,ry:9,f:'m',no:1}]]}
-function dBoat(){return[20,16,[{t:'p',p:[[1,11],[19,11],[16,15],[4,15]],f:'d'},{t:'r',x:9.5,y:1,w:1.2,h:10,f:'d'},{t:'p',p:[[10.7,1.5],[17,10],[10.7,10]],f:'w'},{t:'p',p:[[9.5,3],[9.5,10],[4,10]],f:'l'}]]}
-/* misiones */
-function dMis(id){
- if(id==='fraude')return[24,24,[{t:'p',p:[[12,1],[22,4],[21,13],[12,23],[3,13],[2,4]],f:'l',sh:1},{t:'p',p:[[12,4],[19,6.2],[18.3,12.5],[12,19.6],[5.7,12.5],[5,6.2]],f:'w',no:1},{t:'g',x:11,y:6,g:['dd','dd','dd','dd','dd','..','dd'],m:{d:'d'}}]];
- if(id==='milpin')return[24,24,[{t:'c',x:12,y:15,r:7.6,f:'l',k:'dr',sh:1},{t:'p',p:[[12,.8],[19,11.5],[5,11.5]],f:'l',k:'dr'},{t:'e',x:13.5,y:16,rx:3.8,ry:1.7,a:-.6,f:'m'},{t:'l',p:[[10,20],[13,16]],w:1.2,f:'d',no:1},{t:'g',x:8,y:9,g:['w.','w.','.w'],m:{w:'w'}}]];
- if(id==='observatorio')return[24,24,[{t:'r',x:4,y:11,w:16,h:12,f:'w'},{t:'p',p:[[.6,12.5],[12,1.5],[23.4,12.5]],f:'m',sh:1},{t:'g',x:9,y:14,g:['.d.d.','ddddd','.ddd.','..d..'],m:{d:'d'}}]];
- return[24,24,[{t:'c',x:12,y:12,r:10.8,f:'l',sh:1},{t:'c',x:12,y:12,r:7.6,f:'m'},{t:'g',x:10,y:8,g:['.www.','w...w','w...w','w...w','w.w.w','w..w.','.ww.w'],m:{w:'w'}}]]}
-/* oficio */
-function dWork(k){
- if(k==='db')return[24,24,[{t:'r',x:4,y:5,w:16,h:14,f:'l',k:'db'},{t:'e',x:12,y:19,rx:8,ry:3,f:'l',k:'db',sh:1},{t:'e',x:12,y:5,rx:8,ry:3,f:'w'},{t:'l',p:[[4.5,12],[19.5,12]],w:1,f:'m',no:1}]];
- if(k==='pipe')return[24,24,[{t:'l',p:[[5.5,6.5],[12,18],[18.5,6.5]],w:1.8,f:'d'},{t:'r',x:2,y:3,w:7,h:7,f:'l',sh:1},{t:'r',x:15,y:3,w:7,h:7,f:'l',sh:1},{t:'r',x:8.5,y:14.5,w:7,h:7,f:'m',sh:1}]];
- if(k==='lupa')return[24,24,[{t:'l',p:[[15,15],[22,22]],w:3.4,f:'d'},{t:'c',x:10,y:10,r:8,f:'m'},{t:'c',x:10,y:10,r:5.4,f:'w',sh:1}]];
- return[24,24,[{t:'r',x:3,y:12,w:5,h:10,f:'l',sh:1},{t:'r',x:9.5,y:5,w:5,h:17,f:'m',sh:1},{t:'r',x:16,y:9,w:5,h:13,f:'l',sh:1}]]}
-var MRAMP={fraude:'red',milpin:'sage',observatorio:'lav',qchaucoin:'gold'};
-var PIXR={fusion:MRAMP,jardin:MRAMP,pixo:{fraude:'rose',milpin:'rose',observatorio:'rose',qchaucoin:'rose'},bloques:MRAMP,mundo:MRAMP};
-
-/* ================= VOXELES (isométrico) ================= */
-var VX={g:['#8fcf6f','#9b6a43','#7e5434'],d:['#b98256','#9b6a43','#7e5434'],s:['#ccd0d6','#a9adb5','#8f939c'],w:['#9fdcf7','#6cc0ea','#58a9d6'],
- l:['#73bf5c','#5aa548','#4a8c3b'],t:['#a8754a','#8a5d38','#704a2c'],n:['#f6e3b4','#e2c88e','#cdb174'],p:['#f7b8d2','#e993b8','#d47aa1'],
- v:['#c9b8f2','#a690e0','#8a74cc'],o:['#f4cf63','#d9ac3a','#bf9228'],y:['#e9d36a','#c9b24c','#ad973c'],r:['#d8657f','#bb4b66','#9e3c55'],c:['#fffaf0','#e9e1d3','#d6ccbb']};
-function iso(blocks,s){s=s||12;var has={},vs=[];blocks.forEach(function(b){has[b[0]+','+b[1]+','+b[2]]=1});
- blocks=blocks.slice().sort(function(a,b){return(a[0]+a[1])-(b[0]+b[1])||a[2]-b[2]||a[0]-b[0]});
- var out='',mnx=1e9,mny=1e9,mxx=-1e9,mxy=-1e9;
- function poly(pts,c){pts.forEach(function(p){mnx=Math.min(mnx,p[0]);mny=Math.min(mny,p[1]);mxx=Math.max(mxx,p[0]);mxy=Math.max(mxy,p[1])});
-   out+='<polygon points="'+pts.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1)}).join(' ')+'" fill="'+c+'" stroke="'+c+'" stroke-width=".6" stroke-linejoin="round"/>'}
- blocks.forEach(function(b){var x=b[0],y=b[1],z=b[2],C=VX[b[3]]||VX.g,cx=(x-y)*s,cy=(x+y)*s*.5-z*s;
-  if(!has[x+','+(y+1)+','+z])poly([[cx-s,cy],[cx,cy+s/2],[cx,cy+s*1.5],[cx-s,cy+s]],C[1]);
-  if(!has[(x+1)+','+y+','+z])poly([[cx,cy+s/2],[cx+s,cy],[cx+s,cy+s],[cx,cy+s*1.5]],C[2]);
-  if(!has[x+','+y+','+(z+1)]){poly([[cx,cy-s/2],[cx+s,cy],[cx,cy+s/2],[cx-s,cy]],C[0]);
-    if(b[3]==='g'){out+='<polygon points="'+[[cx-s,cy],[cx,cy+s/2],[cx,cy+s*.75],[cx-s,cy+s*.25]].map(function(p){return p.join(',')}).join(' ')+'" fill="'+VX.l[1]+'"/><polygon points="'+[[cx,cy+s/2],[cx+s,cy],[cx+s,cy+s*.25],[cx,cy+s*.75]].map(function(p){return p.join(',')}).join(' ')+'" fill="'+VX.l[2]+'"/>'}}});
- var pad=2;return '<svg class="vx" viewBox="'+(mnx-pad)+' '+(mny-pad)+' '+(mxx-mnx+pad*2)+' '+(mxy-mny+pad*2)+'" aria-hidden="true">'+out+'</svg>'}
-function island(R,top,extra,seed){var B=[],rnd=mulberry(seed||7);
- for(var x=-R;x<=R;x++)for(var y=-R;y<=R;y++){var d=Math.sqrt(x*x+y*y);if(d>R+.3)continue;var h=Math.max(1,Math.round(3-d*.55+rnd()*.8));
-  for(var z=0;z<h;z++)B.push([x,y,z,z===h-1?top:(z<h-2?'s':'d')]);}
- return B.concat(extra||[])}
-function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-function vTree(x,y,z,lv,h){var B=[];h=h||3;for(var i=0;i<h;i++)B.push([x,y,z+i,'t']);for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){B.push([x+a,y+b,z+h,lv]);if(!a||!b)B.push([x+a,y+b,z+h+1,lv])}B.push([x,y,z+h+2,lv]);return B}
-function topZ(B,x,y){var m=-1;B.forEach(function(b){if(b[0]===x&&b[1]===y&&b[2]>m)m=b[2]});return m+1}
-function vScene(id){var B;
- if(id==='hero'){B=island(5,'g',[],11);var t=vTree(-2,-2,topZ(B,-2,-2),'l',3);B=B.concat(t);
-   for(var i=0;i<3;i++)B.push([3,-3,topZ(B,3,-3),'s']);B.push([3,-3,topZ(B,3,-3),'o']);
-   [[2,3],[3,2],[1,4],[4,1]].forEach(function(p){var z=topZ(B,p[0],p[1])-1;B=B.filter(function(b){return!(b[0]===p[0]&&b[1]===p[1]&&b[2]===z)});B.push([p[0],p[1],z,'w'])});
-   B=B.concat(vTree(2,-1,topZ(B,2,-1),'l',2));return iso(B,12)}
- if(id==='fraude'){B=island(3,'g',[],3);B=B.concat(vTree(-1,0,topZ(B,-1,0),'p',2));for(var j=0;j<2;j++)B.push([1,1,topZ(B,1,1),'s']);B.push([1,1,topZ(B,1,1),'r']);return iso(B,12)}
- if(id==='milpin'){B=island(3,'g',[],5);[[-1,-2],[-1,-1],[-1,0],[-1,1],[-1,2]].forEach(function(p){var z=topZ(B,p[0],p[1])-1;B=B.filter(function(b){return!(b[0]===p[0]&&b[1]===p[1]&&b[2]===z)});B.push([p[0],p[1],z,'w'])});
-   [[1,-1],[1,0],[1,1],[2,0],[0,-2],[0,2]].forEach(function(p){B.push([p[0],p[1],topZ(B,p[0],p[1]),'y'])});return iso(B,12)}
- if(id==='observatorio'){B=island(3,'g',[],9);var z0=topZ(B,0,0);for(var a=-1;a<=1;a++)for(var b=-1;b<=0;b++){B.push([a,b,z0,'c']);B.push([a,b,z0+1,'c'])}
-   for(a=-1;a<=1;a++)for(b=-1;b<=0;b++)B.push([a,b,z0+2,'v']);B.push([0,0,z0+3,'v']);B.push([2,2,topZ(B,2,2),'v']);return iso(B,12)}
- B=island(3,'n',[],13);var zz=topZ(B,0,0);for(var q=-1;q<=1;q++)for(var r=-1;r<=1;r++)B.push([q,r,zz,'o']);B.push([0,0,zz+1,'o']);B.push([0,-1,zz+1,'o']);B.push([-1,0,zz+1,'o']);B.push([0,0,zz+2,'o']);return iso(B,12)}
-
-/* ================= ISLAS (mundo) ================= */
-function blob(cx,cy,r,seed,amp){var rnd=mulberry(seed),n=9,pts=[],ph=rnd()*6;for(var i=0;i<n;i++){var a=i/n*Math.PI*2,rr=r*(1+(amp||.16)*Math.sin(a*3+ph)+.08*(rnd()-.5));pts.push([cx+Math.cos(a)*rr*1.18,cy+Math.sin(a)*rr*.78])}
- var d='';for(i=0;i<n;i++){var p0=pts[(i-1+n)%n],p1=pts[i],p2=pts[(i+1)%n],p3=pts[(i+2)%n];if(!i)d+='M'+p1[0].toFixed(1)+' '+p1[1].toFixed(1);
-  d+='C'+(p1[0]+(p2[0]-p0[0])/6).toFixed(1)+' '+(p1[1]+(p2[1]-p0[1])/6).toFixed(1)+' '+(p2[0]-(p3[0]-p1[0])/6).toFixed(1)+' '+(p2[1]-(p3[1]-p1[1])/6).toFixed(1)+' '+p2[0].toFixed(1)+' '+p2[1].toFixed(1)}
- return d+'Z'}
-var ISL=[{id:'fraude',x:128,y:318,r:62,s:3,t:'Detectar lo raro'},{id:'milpin',x:262,y:150,r:66,s:8,t:'Regar mejor'},{id:'observatorio',x:440,y:300,r:68,s:5,t:'Ayudar primero'},{id:'qchaucoin',x:500,y:118,r:54,s:12,t:'Moneda estable'}];
-function worldMap(){var W=620,H=440,s='<svg class="wmap" viewBox="0 0 '+W+' '+H+'" role="group" aria-label="Mapa del mundo: cuatro islas, una por misión">';
- s+='<defs><linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cdeefb"/><stop offset="1" stop-color="#9fd8f2"/></linearGradient></defs><rect width="'+W+'" height="'+H+'" rx="22" fill="url(#sea)"/>';
- for(var w=0;w<14;w++){var rx=mulberry(w+40),x=rx()*W,y=rx()*H;s+='<path d="M'+x.toFixed(0)+' '+y.toFixed(0)+'q6 -4 12 0 t12 0" fill="none" stroke="#ffffff" stroke-opacity=".7" stroke-width="2" stroke-linecap="round"/>'}
- var pts=ISL.map(function(i){return[i.x,i.y-10]}),d='M'+pts[0].join(' ');for(var k=1;k<pts.length;k++){var a=pts[k-1],b=pts[k];d+='Q'+((a[0]+b[0])/2+(k%2?-40:40))+' '+((a[1]+b[1])/2+(k%2?-30:30))+' '+b.join(' ')}
- s+='<path class="route" d="'+d+'"/>';
- ISL.forEach(function(I,i){var p=P[i];
-  s+='<g class="isl" data-i="'+i+'" role="button" tabindex="0" aria-label="Isla '+p.n+': '+p.title+'">';
-  s+='<path d="'+blob(I.x,I.y,I.r*1.32,I.s)+'" fill="#e6f8fd" opacity=".75"/><path d="'+blob(I.x,I.y,I.r*1.06,I.s)+'" fill="#f4e2b6"/><path d="'+blob(I.x,I.y-4,I.r*.92,I.s+1,.2)+'" fill="#a6d98c"/><path d="'+blob(I.x-8,I.y-10,I.r*.5,I.s+2,.25)+'" fill="#8cc777"/>';
-  s+='<g transform="translate('+(I.x-22)+' '+(I.y-52)+')">'+pix(dMis(I.id),MRAMP[I.id],'','width="44" height="44"')+'</g>';
-  [[-34,4],[30,-2],[22,16]].forEach(function(o,j){s+='<g transform="translate('+(I.x+o[0]-8)+' '+(I.y+o[1]-14)+')">'+pix(dTree(),j%2?'leaf':MRAMP[I.id]==='red'?'red':'leaf','','width="16" height="19"')+'</g>'});
-  var lx=I.x-58,ly=I.y-112;s+='<g class="pin"><rect x="'+lx+'" y="'+ly+'" width="116" height="40" rx="10" fill="#fff" stroke="rgba(42,33,64,.1)"/><circle cx="'+(lx+2)+'" cy="'+(ly+2)+'" r="13" fill="'+p.c+'"/><text x="'+(lx+2)+'" y="'+(ly+6.5)+'" text-anchor="middle" class="pn">'+p.n+'</text><text x="'+(lx+58)+'" y="'+(ly+18)+'" text-anchor="middle" class="pt">'+short[p.id].toUpperCase()+'</text><text x="'+(lx+58)+'" y="'+(ly+32)+'" text-anchor="middle" class="ps">'+I.t+'</text></g></g>'});
- s+='<g class="me" id="wm-me">'+pix(dAvatar('#e8457a'),'blue','','x="-12" y="-34" width="24" height="32"')+'<ellipse cx="0" cy="0" rx="10" ry="3" fill="rgba(0,0,0,.18)"/></g>';
- s+='<g class="drift d1" transform="translate(40 40)">'+pix(dCloud(),'blue','','width="60" height="24"')+'</g><g class="drift d2" transform="translate(330 280)">'+pix(dCloud(),'blue','','width="48" height="19"')+'</g>';
- s+='<g class="bob" transform="translate(560 30)">'+pix(dBalloon(),'red','','width="30" height="43"')+'</g><g class="bob b2" transform="translate(300 392)">'+pix(dBoat(),'blue','','width="30" height="24"')+'</g>';
- return s+'</svg>'}
-
-/* ================= SKINS ================= */
+/* ================= INICIO: portada, secciones y contacto ================= */
 var GH='https://github.com/Zidnz',LI='https://www.linkedin.com/in/omar-guti%C3%A9rrez-88507527a/';
-var SKINS=[
- {id:'jardin',name:'Jardín pixel',d:'Crema y azul marino, flores, computadora retro y ventanas',sw:['#f6f2e8','#1f3566','#b9cdf0']},
- {id:'pastel',name:'Tarjetas pastel',d:'Tarjetas redondas turquesa con carrusel de misiones',sw:['#ffffff','#44b8b8','#bfeeee']},
- {id:'fusion',name:'Jardín pastel',d:'La mezcla: el jardín pixel en turquesa con las tarjetas pastel',sw:['#fbfaf6','#2fa7a7','#ffc2d6']}];
-var SKIN='jardin';
-var KEYW={fraude:['fraud','banc','kafka','spark','transac','delta','alerta','grafo','lakehouse'],milpin:['rieg','agua','milp','fao','cultiv','postgis','xgboost','agro','yaqui'],
- observatorio:['cuid','observ','enasic','censo','encuest','regla','social','relevo'],qchaucoin:['moned','qchau','block','caden','rsa','cripto','stable','fintech']};
-function matchMission(q){q=(q||'').toLowerCase();for(var k in KEYW)if(KEYW[k].some(function(w){return q.indexOf(w)>=0}))return k;return null}
 var RES={fraude:'53.6% del fraude revisando 3.35%',milpin:'MVP desplegado, 115 pruebas',observatorio:'La regla simple empató a los modelos',qchaucoin:'Cadena, monedero y modelo de precio'};
-function lic(n){return ic(n)}
-function sp(def,ramp,cls){return pix(def,ramp,cls)}
+
+/* Ilustraciones vectoriales (SVG propio, sin pixeles) */
+function artFlower(cls){var s='<svg class="'+cls+'" viewBox="0 0 100 200" aria-hidden="true">'+
+  '<path d="M50 192C48 150 54 110 50 66" fill="none" stroke="#3a9d84" stroke-width="5" stroke-linecap="round"/>'+
+  '<path d="M50 152C28 148 18 130 16 114C36 116 48 130 50 152Z" fill="#5cc6a0"/>'+
+  '<path d="M51 130C72 128 84 112 86 96C66 98 53 110 51 130Z" fill="#46b08f"/>';
+  for(var i=0;i<8;i++)s+='<ellipse cx="50" cy="36" rx="11" ry="22" transform="rotate('+(i*45)+' 50 58)" fill="'+(i%2?'#ff8fb1':'#ffb3cb')+'"/>';
+  return s+'<circle cx="50" cy="58" r="12" fill="#ffd36b"/><circle cx="50" cy="58" r="5.5" fill="#f5b445"/></svg>'}
+function artCat(cls){return '<svg class="'+cls+'" viewBox="0 0 120 130" aria-hidden="true">'+
+  '<path d="M92 114C120 110 120 70 100 66" fill="none" stroke="#b9dfe6" stroke-width="9" stroke-linecap="round"/>'+
+  '<ellipse cx="62" cy="100" rx="34" ry="28" fill="#d4eef2"/><ellipse cx="60" cy="108" rx="15" ry="15" fill="#fff"/>'+
+  '<path d="M36 46L40 18L58 36Z" fill="#d4eef2"/><path d="M82 46L78 18L60 36Z" fill="#d4eef2"/>'+
+  '<path d="M41 38L43 27L51 35Z" fill="#ffb3cb"/><path d="M77 38L75 27L67 35Z" fill="#ffb3cb"/>'+
+  '<circle cx="59" cy="58" r="26" fill="#d4eef2"/><circle cx="49" cy="58" r="3.4" fill="#1f2b3a"/><circle cx="69" cy="58" r="3.4" fill="#1f2b3a"/>'+
+  '<path d="M56 66h6l-3 3.6z" fill="#ff8fb1"/><path d="M59 70q-4 5-8 3M59 70q4 5 8 3" fill="none" stroke="#1f2b3a" stroke-width="1.5" stroke-linecap="round"/>'+
+  '<ellipse cx="48" cy="123" rx="10" ry="5" fill="#fff"/><ellipse cx="72" cy="123" rx="10" ry="5" fill="#fff"/></svg>'}
+function artMailbox(cls){return '<svg class="'+cls+'" viewBox="0 0 110 150" aria-hidden="true">'+
+  '<rect x="44" y="72" width="12" height="78" rx="4" fill="#7d9db3"/>'+
+  '<rect x="30" y="16" width="42" height="28" rx="5" fill="#fff" stroke="#bfeeee" stroke-width="2" transform="rotate(-6 51 30)"/><path d="M32 20L51 34L70 20" fill="none" stroke="#bfeeee" stroke-width="2" transform="rotate(-6 51 30)"/>'+
+  '<path d="M12 86V58C12 40 28 30 50 30C72 30 88 40 88 58V86Z" fill="#44b8b8"/><path d="M12 70H88V86H12Z" fill="#2f9a9a"/>'+
+  '<rect x="84" y="26" width="5" height="40" rx="2.5" fill="#ff8fb1"/><rect x="86" y="26" width="22" height="15" rx="4" fill="#ff6f9c"/></svg>'}
+function artLaptop(cls){return '<svg class="'+cls+'" viewBox="0 0 300 220" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3b52"/><stop offset="1" stop-color="#1b2635"/></linearGradient>'+
+  '<linearGradient id="la" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ee0d6" stop-opacity=".45"/><stop offset="1" stop-color="#5ee0d6" stop-opacity="0"/></linearGradient></defs>'+
+  '<ellipse cx="150" cy="208" rx="132" ry="8" fill="rgba(31,43,58,.12)"/>'+
+  '<rect x="30" y="8" width="240" height="152" rx="14" fill="#1f2b3a"/><rect x="40" y="18" width="220" height="132" rx="8" fill="url(#lg)"/>'+
+  '<rect x="54" y="30" width="46" height="14" rx="7" fill="#2fa7a7"/><rect x="106" y="30" width="46" height="14" rx="7" fill="#ff8fb1"/><rect x="158" y="30" width="46" height="14" rx="7" fill="#ffd36b"/>'+
+  '<path d="M54 128L88 106L120 114L152 82L186 92L224 56L246 64V136H54Z" fill="url(#la)"/>'+
+  '<polyline points="54,128 88,106 120,114 152,82 186,92 224,56 246,64" fill="none" stroke="#5ee0d6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>'+
+  '<circle cx="224" cy="56" r="6" fill="#ff8fb1" stroke="#fff" stroke-width="2"/>'+
+  '<path d="M10 166H290L278 186Q276 192 268 192H32Q24 192 22 186Z" fill="#cfe6ea"/><rect x="122" y="166" width="56" height="8" rx="4" fill="#a9ccd2"/></svg>'}
+function artHeart(cls){return '<svg class="'+cls+'" viewBox="0 0 40 36" aria-hidden="true"><path d="M20 34C-6 16 6-4 20 8C34-4 46 16 20 34Z" fill="#ff8fb1"/></svg>'}
+function artSpark(cls,c){return '<svg class="'+cls+'" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 0C11 6 14 9 20 10C14 11 11 14 10 20C9 14 6 11 0 10C6 9 9 6 10 0Z" fill="'+(c||'#7fd6d6')+'"/></svg>'}
+function artCloud(cls){return '<svg class="'+cls+'" viewBox="0 0 120 50" aria-hidden="true"><path d="M26 46C10 46 4 30 18 24C16 10 34 2 46 12C54-2 80 0 84 18C100 14 114 28 104 40C101 45 96 46 90 46Z" fill="#fff" stroke="#e3f8f8" stroke-width="2"/></svg>'}
+function artRadio(){return '<svg viewBox="0 0 40 30" aria-hidden="true"><path d="M10 9L30 1" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><rect x="2" y="9" width="36" height="20" rx="7" fill="#fff"/><circle cx="13" cy="19" r="5.5" fill="#44b8b8"/><rect x="23" y="14" width="11" height="3" rx="1.5" fill="#bfeeee"/><rect x="23" y="21" width="11" height="3" rx="1.5" fill="#bfeeee"/></svg>'}
+
+function heroScene(){return '<div class="hj-s" id="hero-scene"><div class="orb"></div>'+
+  '<div class="cloud">'+artCloud('')+'</div>'+
+  '<div class="sway f1">'+artFlower('')+'</div><div class="sway f2" style="animation-delay:-2s">'+artFlower('')+'</div>'+
+  '<div class="comp">'+artLaptop('')+'</div><div class="cat">'+artCat('')+'</div>'+
+  '<div class="bubble">CARGANDO DATOS…<i></i></div><div class="hrt">'+artHeart('')+'</div>'+
+  '<div class="spk s1">'+artSpark('')+'</div><div class="spk s2">'+artSpark('','#ffb3cb')+'</div><div class="spk s3">'+artSpark('','#ffd36b')+'</div><div class="spk s4">'+artSpark('')+'</div></div>'}
 
 function pastelGrid(){return '<div class="hpa-grid">'+
  '<div><h3>Proyectos ›</h3><div class="arts">'+P.slice(0,2).map(function(p){return '<button type="button" data-go="'+p.id+'"><img src="assets/img/'+p.cover+'.webp" alt=""><span>'+short[p.id]+'</span></button>'}).join('')+'</div><button class="vm" type="button" data-scroll="levels-h">Ver más</button></div>'+
  '<div><h3>Búsquedas recientes</h3><div class="srch">'+[['detección de fraude con Kafka','fraude'],['riego con FAO-56','milpin'],['esquema estrella ENASIC','observatorio'],['blockchain y RSA','qchaucoin'],['lakehouse con Delta Lake','fraude'],['PostGIS y parcelas','milpin']].map(function(s,i){return '<button type="button" data-go="'+s[1]+'" style="--k:'+i+'">'+ic('filter')+s[0]+'</button>'}).join('')+'</div></div>'+
  '<div class="nums">'+P.map(function(p){return '<button type="button" data-go="'+p.id+'" style="--c:'+p.c+'"><b>'+p.n+'</b><span><strong>'+short[p.id]+'</strong><small>'+RES[p.id]+'</small></span></button>'}).join('')+'</div></div>'}
-var HERO={
-mundo:function(){var p0=P[0];return '<div class="h-mundo"><div class="wrap hm">'+
- '<div class="hm-l"><p class="hey">HOLA, SOY OMAR ✿</p><h1>Convierto datos en <em>decisiones</em> <span class="scr">que se notan.</span></h1>'+
- '<p class="lede">Estudiante de Ciencia de Datos para el Negocio en la UNRC y ex Junior Data Analyst en Veolia. Cuatro misiones: fraude, agua, cuidados y finanzas.</p>'+
- '<div class="cta"><button class="btn" type="button" data-scroll="levels-h">Explorar mi mundo ✦</button><a class="btn ghost" href="'+GH+'" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>'+
- '<div class="gcard quest"><h4>MISIÓN ACTUAL</h4><div class="qrow">'+pix(dAvatar('#e8457a'),'blue','av')+'<p>Pasar de analista junior a Data Scientist junior, un proyecto a la vez.</p></div><div class="lvl"><span>Nv. 7 · semestre</span><span class="num">3/4 misiones</span></div><div class="bar"><i style="width:75%"></i></div><small>3 completas · Observatorio en curso</small></div>'+
- '<div class="gcard stk"><h4>INVENTARIO</h4><div class="ticons">'+[['py','Python'],['db','SQL'],['r','R'],['stream','Kafka'],['spark','Spark'],['map','PostGIS'],['tree','XGBoost'],['net','Keras']].map(function(t){return '<span title="'+t[1]+'">'+ic(t[0])+'<small>'+t[1]+'</small></span>'}).join('')+'</div></div></div>'+
- '<div class="hm-map"><div class="mapwrap">'+worldMap()+'</div><div class="keys"><span>Muévete con</span><kbd>←</kbd><kbd>→</kbd><span>o toca una isla · entra con</span><kbd>Enter</kbd></div></div>'+
- '<div class="hm-r"><div class="gcard pl">'+pix(dAvatar('#e8457a'),'blue','av big')+'<div class="who"><b>Omar</b><small>Ciencia de datos · CDMX</small></div>'+
- '<h4>XP DEL DÍA</h4><div class="bar"><i style="width:60%"></i></div><small class="num">4 misiones · 33 figuras · 5 simuladores</small>'+
- '<h4>INSIGNIAS</h4><div class="badges">'+P.map(function(p){return '<button type="button" data-go="'+p.id+'" title="'+p.title+'">'+pix(dMis(p.id),MRAMP[p.id])+'</button>'}).join('')+'</div></div>'+
- '<div class="gcard vibe" id="wm-card"></div>'+
- '<div class="note"><b>NOTA PARA MÍ</b><span class="scr">Progreso, no perfección.</span></div></div></div></div>'},
-jardin:function(R){R=R||'blue';return '<div class="h-jardin"><div class="wrap hj">'+
- '<aside class="rail"><b>UNRC</b><small>7.º SEM</small>'+sp(dPot(),R)+'<hr><a href="'+GH+'" target="_blank" rel="noopener noreferrer">GH</a><a href="'+LI+'" target="_blank" rel="noopener noreferrer">IN</a></aside>'+
+
+function heroHTML(){var tk='Ahora corriendo: lakehouse de fraude en Spark ♪ · · · batch = streaming ✓ · · · ETo del día: 7.1 mm · · · regla de 40 h contra modelos: sin ganador claro · · · QchauCoin = 1.00 · · · gracias por visitar ✦ · · · ';
+ return '<div class="h-hero"><div class="wrap hj">'+
+ '<aside class="rail"><b>UNRC</b><small>7.º SEM</small>'+artFlower('')+'<hr><a href="'+GH+'" target="_blank" rel="noopener noreferrer">GH</a><a href="'+LI+'" target="_blank" rel="noopener noreferrer">IN</a></aside>'+
  '<div class="hj-t"><p class="tagp">OMAR GUTIÉRREZ ESCOTO</p><h1>Datos que<br>toman<br>decisiones</h1><p class="lede">Estudiante de Ciencia de Datos para el Negocio en la UNRC y ex Junior Data Analyst en Veolia. Cultivo modelos, pipelines y tableros que ayudan a decidir.</p>'+
  '<div class="cta"><button class="btn" type="button" data-scroll="levels-h">Ver misiones ›</button><a class="btn ghost" href="'+GH+'" target="_blank" rel="noopener noreferrer">GitHub ✿</a></div></div>'+
- '<div class="hj-s"><div class="sway f1">'+sp(dFlower(1),R)+'</div><div class="sway f2">'+sp(dFlower(.5),R)+'</div><div class="comp">'+sp(dComputer(),R)+'</div>'+
- '<div class="bubble">CARGANDO DATOS…<i></i></div><div class="cat">'+sp(dCat(),R)+'</div><div class="mush">'+sp(dMush(),R)+'</div><div class="hrt">'+sp(dHeart(),R)+'</div>'+
- [1,2,3,4,5].map(function(i){return '<div class="spk s'+i+'">'+sp(dSpark(),R)+'</div>'}).join('')+
- '<div class="row">'+[0,1,2,3,4,5,6].map(function(){return sp(dTiny(),R)}).join('')+'</div></div></div>'+
- '<div class="wrap"><div class="ticker">'+sp(dRadio(),R)+'<div class="tk"><div class="tk-in">'+(function(){var t='Ahora corriendo: lakehouse de fraude en Spark ♪ · · · batch = streaming ✓ · · · ETo del día: 7.1 mm · · · regla de 40 h contra modelos: sin ganador claro · · · QchauCoin = 1.00 · · · gracias por visitar ✦ · · · ';return '<span>'+t+'</span><span>'+t+'</span>'})()+'</div></div><span class="eq"><i></i><i></i><i></i><i></i></span></div></div></div>'},
-fusion:function(){return HERO.jardin('teal')+'<div class="h-pastel h-fu"><div class="wrap">'+pastelGrid()+'</div></div>'},
-pixo:function(){var R='rose';return '<div class="h-pixo"><div class="wrap hp"><h1>Datos pequeños.<br>Grandes decisiones.</h1>'+
- '<p class="lede">Soy Omar, estudiante de Ciencia de Datos para el Negocio. Dato, mi asistente, te lleva a cualquier misión.</p>'+
- '<div class="hp-scene"><div class="trees l">'+[0,1,2].map(function(){return sp(dTree(),R)}).join('')+'</div><div class="dato">'+sp(dDato(),R)+'<div class="say">'+sp(dHeart(),R)+'</div></div>'+
- '<div class="trees r">'+[0,1].map(function(){return sp(dTree(),R)}).join('')+sp(dFlag(),R)+'</div><div class="cl c1">'+sp(dCloud(),R)+'</div><div class="cl c2">'+sp(dCloud(),R)+'</div>'+
- '<div class="spk s1">'+sp(dSpark(),R)+'</div><div class="spk s2">'+sp(dHeart(),R)+'</div><div class="gnd"></div></div>'+
- '<form class="ask" id="px-ask"><span>✦</span><label for="px-q" class="vh">Pregúntale a Dato</label><input id="px-q" autocomplete="off" placeholder="Pregúntale a Dato: fraude, riego, cuidado, moneda…"><button type="submit" aria-label="Ir">→</button></form><p class="ans" id="px-ans" role="status">Escribe un tema y Dato te lleva a la misión.</p></div><div class="hp-band"></div></div>'},
-bloques:function(){return '<div class="h-bloques"><div class="wrap"><div class="hb-card"><div class="hb-top"><div class="hb-t"><p class="lab">Portafolio de ciencia de datos</p><h1>Explorar<br>Modelar<br><em>Decidir</em></h1>'+
- '<p class="lede">Un portafolio construido bloque a bloque: datos reales, modelos que se auditan y decisiones que se pueden explicar.</p><div class="cta"><button class="btn" type="button" data-scroll="levels-h">Ver proyectos →</button><button class="btn ghost" type="button" data-go="fraude">▶ Primera misión</button></div></div>'+
- '<div class="hb-scene">'+vScene('hero')+'<div class="cl c1">'+pix(dCloud(),'blue')+'</div><div class="cl c2">'+pix(dCloud(),'blue')+'</div></div></div>'+
- '<div class="hb-about"><div class="pics"><img src="assets/img/m-app.webp" alt="Pantallas de MILPÍN"><img src="assets/img/o-home.webp" alt="Portada del Observatorio"></div><div><p class="lab">Sobre mí</p><h2>Un constructor de datos</h2><p>Un año como Junior Data Analyst en Veolia limpiando CRM real de varias unidades de negocio, más cuatro proyectos donde modelo, mido y explico. Una tabla a la vez.</p><a class="lnk" href="'+LI+'" target="_blank" rel="noopener noreferrer">Ver LinkedIn →</a></div></div>'+
- '<div class="hb-quote"><p>“Ideas pequeñas,<br>decisiones grandes.”</p><div class="strip">'+['fraude','milpin','observatorio','qchaucoin'].map(vScene).join('')+'</div></div></div></div></div>'},
-pastel:function(){return '<div class="h-pastel"><div class="wrap"><div class="hpa-banner" id="pa-b"></div>'+pastelGrid()+'</div></div>'},
-poster:function(){return '<div class="h-poster"><div class="wrap hpo"><div class="hpo-t"><p class="lab">Ciencia de datos<br>para el negocio</p><h1>Convierto datos en decisiones<b>.</b></h1>'+
- '<p class="lede">Omar Gutiérrez Escoto. Modelos, pipelines y tableros para fraude, agua, cuidados y finanzas. Ex Junior Data Analyst en Veolia.</p><button class="btn" type="button" data-scroll="levels-h">Ver mi trabajo ↗</button>'+
- '<p class="mini">01 · fraude &nbsp; 02 · riego &nbsp; 03 · cuidado &nbsp; 04 · fintech</p></div><div class="hpo-art">'+posterArt()+'</div></div>'+
- '<div class="hpo-band"><div class="mq"><span>FRAUDE / RIEGO / CUIDADO / FINTECH / PIPELINES / MODELOS / </span><span>FRAUDE / RIEGO / CUIDADO / FINTECH / PIPELINES / MODELOS / </span></div></div></div>'}
-};
-function posterArt(){var s='<svg viewBox="0 0 520 480" class="pa" aria-hidden="true"><circle cx="270" cy="230" r="200" fill="#f6b48a"/>';
- s+='<g fill="none" stroke="#121418" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">';
- s+='<rect x="150" y="120" width="240" height="160" rx="12" fill="#eef1ec"/><rect x="166" y="136" width="208" height="112" rx="4" fill="#7fd3d3"/>';
- s+='<polyline points="178,224 210,200 236,212 264,170 292,184 322,150 360,162" stroke-width="3"/><circle cx="322" cy="150" r="6" fill="#e5336b"/>';
- s+='<line x1="178" y1="236" x2="362" y2="236"/><path d="M250 280 l-14 40 h68 l-14 -40"/><line x1="214" y1="320" x2="326" y2="320"/>';
- s+='<circle cx="96" cy="300" r="16" fill="#eef1ec"/><circle cx="60" cy="380" r="12" fill="#eef1ec"/><circle cx="140" cy="390" r="12" fill="#eef1ec"/><line x1="86" y1="312" x2="66" y2="368"/><line x1="104" y1="314" x2="134" y2="378"/><line x1="112" y1="300" x2="150" y2="270"/>';
- s+='<path d="M400 330 h80 l-22 28 v34 l-36 18 v-52 z" fill="#eef1ec"/><line x1="392" y1="300" x2="392" y2="330"/>';
- s+='<circle cx="460" cy="90" r="22"/><line x1="430" y1="90" x2="490" y2="90"/><line x1="460" y1="60" x2="460" y2="120"/></g>';
- s+='<g font-family="IBM Plex Mono,monospace" font-size="11" fill="#121418"><text x="404" y="150">STUDIO / DATOS</text><text x="404" y="166">MODELOS</text><text x="404" y="180">PIPELINES</text><text x="404" y="194">TABLEROS</text>';
- s+='<text x="20" y="250" font-size="40" font-family="Anton,sans-serif">01</text><text x="20" y="268">FRAUDE · RIEGO</text><text x="20" y="282">CUIDADO · FINTECH</text></g>';
- for(var i=0;i<22;i++)s+='<rect x="'+(404+i*4)+'" y="206" width="'+(i%3?1.5:3)+'" height="22" fill="#121418"/>';
- s+='<text x="380" y="440" font-family="Caveat,cursive" font-size="24" fill="#121418" transform="rotate(-8 380 440)">mismo dato,</text><text x="388" y="464" font-family="Caveat,cursive" font-size="24" fill="#121418" transform="rotate(-8 388 464)">otra decisión</text>';
- return s+'</svg>'}
+ heroScene()+'</div>'+
+ '<div class="wrap"><div class="ticker">'+artRadio()+'<div class="tk"><div class="tk-in"><span>'+tk+'</span><span>'+tk+'</span></div></div><span class="eq"><i></i><i></i><i></i><i></i></span></div></div></div>'+
+ '<div class="h-pastel h-fu"><div class="wrap">'+pastelGrid()+'</div></div>'}
 
-/* --- secciones compartidas que cambian con la skin --- */
-var WORK=[['db','Datos reales','Limpieza de CRM real de varias unidades de negocio en Veolia: duplicados, etapas y monedas.','chart'],
+var WORK=[['db','Datos reales','Limpieza de CRM real de varias unidades de negocio en Veolia con Salesforce: duplicados, etapas y monedas.','chart'],
  ['pipe','Pipelines','Kafka, Spark, Delta Lake, PostgreSQL con PostGIS y almacenes en esquema estrella.','layers'],
  ['lupa','Modelos auditados','Spark MLlib, XGBoost y regresión. Y sospechar cuando algo sale demasiado bien.','tree'],
- ['chart','Tableros','Power BI, Looker Studio y sitios propios para que alguien decida con los números.','screen']];
-function renderShared(){var px=(SKIN==='jardin'||SKIN==='pixo'||SKIN==='bloques'||SKIN==='fusion'),R=SKIN==='pixo'?'rose':SKIN==='bloques'?'leaf':SKIN==='fusion'?'teal':'blue';
- $('what').innerHTML=WORK.map(function(w){return '<div class="wk"><span class="wi">'+(px?pix(dWork(w[0]),R):ic(w[3]))+'</span><h4>'+w[1]+'</h4><p>'+w[2]+'</p>'+(px?'<span class="wh">'+pix(dHeart(),R)+'</span>':'')+'</div>'}).join('');
- $('levels').innerHTML='';P.forEach(function(p,i){var x=X[p.id],th;
-  if(SKIN==='jardin'||SKIN==='pixo'||SKIN==='fusion')th='<div class="thumb sprite">'+pix(dMis(p.id),PIXR[SKIN][p.id])+'<span class="tg">'+pix(dTiny(),PIXR[SKIN][p.id])+pix(dTiny(),PIXR[SKIN][p.id])+'</span></div>';
-  else if(SKIN==='bloques')th='<div class="thumb vox">'+vScene(p.id)+'</div>';
-  else if(SKIN==='mundo')th='<div class="thumb isle"><svg viewBox="0 0 200 120"><rect width="200" height="120" fill="#bfe7f7"/><path d="'+blob(100,70,48,ISL[i].s)+'" fill="#f4e2b6"/><path d="'+blob(100,66,42,ISL[i].s+1,.2)+'" fill="#a6d98c"/><g transform="translate(78 22)">'+pix(dMis(p.id),MRAMP[p.id],'','width="44" height="44"')+'</g></svg></div>';
-  else th='<div class="thumb img"><img src="assets/img/'+p.cover+'.webp" alt=""></div>';
-  var lv=el('button','lv',th+'<div class="in"><span class="no">'+(SKIN==='poster'?p.n:'MISIÓN '+p.n)+'</span><h3>'+p.title+'</h3><dl><dt>Dominio</dt><dd>'+x.card[0]+'</dd><dt>Técnica</dt><dd>'+x.card[1]+'</dd><dt>Resultado</dt><dd>'+RES[p.id]+'</dd></dl><span class="play">Entrar →</span></div>');
-  lv.type='button';lv.style.setProperty('--lc',p.c);lv.onclick=function(){go(p.id)};$('levels').appendChild(lv)});
- var cd=$('cta-deco');cd.innerHTML=SKIN==='fusion'?'<span class="d1">'+pix(dMailbox(),'teal')+'</span><span class="d2">'+pix(dCat(),'teal')+'</span><span class="d3">'+pix(dFlower(.4),'teal')+'</span>':SKIN==='jardin'?'<span class="d1">'+pix(dMailbox(),'blue')+'</span><span class="d2">'+pix(dCat(),'blue')+'</span><span class="d3">'+pix(dFlower(.4),'blue')+'</span>':
-  SKIN==='pixo'?'<span class="d1">'+pix(dDato(),'rose')+'</span><span class="d3">'+pix(dTree(),'rose')+'</span>':SKIN==='bloques'?'<span class="d1">'+vScene('milpin')+'</span>':SKIN==='mundo'?'<span class="d1">'+pix(dBalloon(),'red')+'</span><span class="d2">'+pix(dAvatar('#e8457a'),'blue')+'</span>':'';
- $('skin-cards').innerHTML=SKINS.map(function(k){return '<button type="button" data-skin="'+k.id+'" aria-pressed="'+(k.id===SKIN)+'"><span class="sw">'+k.sw.map(function(c){return '<i style="background:'+c+'"></i>'}).join('')+'</span><b>'+k.name+'</b><small>'+k.d+'</small></button>'}).join('');
- $('skin-dots').innerHTML=SKINS.map(function(k){return '<button type="button" data-skin="'+k.id+'" aria-pressed="'+(k.id===SKIN)+'" title="Estilo: '+k.name+'" aria-label="Estilo: '+k.name+'" style="--a:'+k.sw[0]+';--b:'+k.sw[1]+'"></button>'}).join('')}
+ ['chart','Tableros','Tableau, CRM Analytics y Looker Studio en Veolia, y Power BI y sitios propios en mis proyectos, para que alguien decida con los números.','screen']];
 
-/* --- comportamiento por skin --- */
-var heroTimer=0;
-function heroWire(){clearInterval(heroTimer);var h=$('hero');
- if(SKIN==='mundo'){var cur=0,me=$('wm-me'),card=$('wm-card'),gs=h.querySelectorAll('.isl');
-  var sel=function(i){cur=(i+4)%4;var I=ISL[cur],p=P[cur];me.setAttribute('transform','translate('+I.x+' '+(I.y-8)+')');
-   [].forEach.call(gs,function(g,j){g.classList.toggle('on',j===cur)});
-   card.style.setProperty('--c',p.c);card.innerHTML='<h4>AHORA EXPLORANDO</h4><div class="vrow">'+pix(dMis(p.id),MRAMP[p.id])+'<div><b>'+p.n+' · '+short[p.id]+'</b><small>'+RES[p.id]+'</small></div></div><div class="ctrl"><button type="button" data-mv="-1" aria-label="Isla anterior">◀</button><button type="button" class="go" data-enter="1">Entrar</button><button type="button" data-mv="1" aria-label="Isla siguiente">▶</button></div>'};
-  [].forEach.call(gs,function(g,j){g.addEventListener('click',function(){if(j===cur)go(P[j].id);else sel(j)});g.addEventListener('keydown',function(e){if(e.key==='Enter'){go(P[j].id)}})});
-  card.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.mv)sel(cur+(+b.dataset.mv));else go(P[cur].id)});
-  h._key=function(e){if(e.key==='ArrowRight'||e.key==='d'||e.key==='D'){sel(cur+1);e.preventDefault()}else if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A'){sel(cur-1);e.preventDefault()}else if(e.key==='Enter'&&!/BUTTON|A|INPUT/.test(document.activeElement.tagName))go(P[cur].id)};
-  sel(0)}else h._key=null;
- if(SKIN==='pixo'){var f=$('px-ask'),q=$('px-q'),a=$('px-ans');
-  q.addEventListener('input',function(){var m=matchMission(q.value);a.textContent=!q.value?'Escribe un tema y Dato te lleva a la misión.':m?'Encontré: '+P.filter(function(p){return p.id===m})[0].title+'. Presiona Enter.':'Aún no encuentro esa misión. Prueba con fraude, riego, cuidado o moneda.'});
-  f.addEventListener('submit',function(e){e.preventDefault();var m=matchMission(q.value);if(m)go(m);else a.textContent='Aún no encuentro esa misión. Prueba con fraude, riego, cuidado o moneda.'})}
- if(SKIN==='pastel'){var S=[{t:'Omar',d:'Estudiante de Ciencia de Datos para el Negocio en la UNRC y ex Junior Data Analyst en Veolia. Cuatro proyectos, cada uno con su pipeline, su modelo y sus límites.',im:['f2-anillo','m-app','o-home'],go:null}].concat(P.map(function(p){return{t:short[p.id],d:p.sub,im:[p.cover].concat(p.gal.slice(1,3).map(function(g){return g[0]})),go:p.id,c:p.c}})),k=0,b=$('pa-b');
-  var draw=function(){var s=S[k];b.innerHTML='<div class="t"><h1>'+s.t+'</h1><p>'+s.d+'</p>'+(s.go?'<button class="more" type="button" data-go="'+s.go+'">Entrar a la misión</button>':'<button class="more" type="button" data-scroll="levels-h">Ver proyectos</button>')+
-   '<div class="dots">'+S.map(function(_,j){return '<button type="button" aria-label="Diapositiva '+(j+1)+'" class="'+(j===k?'on':'')+'" data-k="'+j+'"></button>'}).join('')+'</div></div><div class="collage">'+s.im.map(function(m,j){return '<img class="c'+j+'" src="assets/img/'+m+'.webp" alt="">'}).join('')+'<svg class="hz" viewBox="0 0 40 36"><path d="M20 34 C-8 14 6 -6 20 8 C34 -6 48 14 20 34Z" fill="#ff8fb1"/></svg></div>'};
-  b.addEventListener('click',function(e){var d=e.target.closest('[data-k]');if(d){k=+d.dataset.k;draw()}});draw();if(!RM)heroTimer=setInterval(function(){if(!$('view-inicio').hidden&&!b.matches(':hover')){k=(k+1)%S.length;draw()}},6500)}
-}
-document.addEventListener('keydown',function(e){var h=$('hero');if(h&&h._key&&!$('view-inicio').hidden&&!(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)))h._key(e)});
-document.addEventListener('click',function(e){var t=e.target.closest('[data-go],[data-scroll],[data-skin]');if(!t)return;
- if(t.dataset.skin){setSkin(t.dataset.skin);return}
- if(t.dataset.go){go(t.dataset.go);return}
- var n=$(t.dataset.scroll);if(n)n.scrollIntoView({behavior:RM?'auto':'smooth',block:'start'})});
-function setSkin(id,init){if(!SKINS.some(function(k){return k.id===id}))id='jardin';SKIN=id;document.documentElement.setAttribute('data-skin',id);
- try{localStorage.setItem('zidnz-skin',id)}catch(e){}
+/* Cambia ART3D a true cuando agregues assets/hero/escena.webp y assets/hero/contacto.webp para reemplazar el dibujo vectorial */
+var ART3D=false;
+function tryArt(file,node,cls){var im=new Image();im.onload=function(){node.innerHTML='<img src="assets/hero/'+file+'" alt="" loading="lazy">';node.classList.add(cls)};im.src='assets/hero/'+file}
+
+function renderHome(){
+ $('hero').innerHTML=heroHTML();
+ $('what').innerHTML=WORK.map(function(w){return '<div class="wk"><span class="wi">'+ic(w[3])+'</span><h4>'+w[1]+'</h4><p>'+w[2]+'</p></div>'}).join('');
+ $('levels').innerHTML='';
+ P.forEach(function(p){var x=X[p.id];
+  var lv=el('button','lv','<div class="thumb img"><img src="assets/img/'+p.cover+'.webp" alt=""></div><div class="in"><span class="no">MISIÓN '+p.n+'</span><h3>'+p.title+'</h3><dl><dt>Dominio</dt><dd>'+x.card[0]+'</dd><dt>Técnica</dt><dd>'+x.card[1]+'</dd><dt>Resultado</dt><dd>'+RES[p.id]+'</dd></dl><span class="play">Entrar →</span></div>');
+  lv.type='button';lv.style.setProperty('--lc',p.c);lv.onclick=function(){go(p.id)};$('levels').appendChild(lv)});
+ var cd=$('cta-deco');cd.innerHTML='<span class="d1">'+artMailbox('')+'</span><span class="d2">'+artCat('')+'</span><span class="d3">'+artFlower('')+'</span>';
+ if(ART3D){tryArt('escena.webp',$('hero-scene'),'has-art');tryArt('contacto.webp',cd,'has-art')}
  HOME.c=getComputedStyle(document.documentElement).getPropertyValue('--home').trim()||HOME.c;HOME.cs='color-mix(in srgb,'+HOME.c+' 13%,transparent)';tabBtn.inicio.style.setProperty('--tc',HOME.c);
- $('hero').innerHTML=HERO[id]();renderShared();heroWire();
- if(!init){var cur=Object.keys(views).filter(function(k){return !views[k].hidden})[0]||'inicio';go(cur,true)}
+ var cur=Object.keys(views).filter(function(k){return !views[k].hidden})[0]||'inicio';go(cur,true);
  setTimeout(function(){window.dispatchEvent(new Event('resize'))},60)}
 
-/* ================= MAPA DE NODOS (hero) ================= */
-(function(){if(!$('graph'))return;
-  var cv=$('graph'),cap=$('g-cap'),W=0,H=0,ctx,N=[],E=[],sel=null,drag=null,moved=false,raf=0,t=0;
-  var techs={'Python':[0,1,2,3],'SQL':[0,1,2],'PostgreSQL':[0,1],'Delta Lake':[0],'R':[2,3],'Spark':[0],'Kafka':[0],'MongoDB':[3],'FastAPI':[1],'PostGIS':[1],'XGBoost':[1],'scikit-learn':[1,2],'JavaScript':[1,2,3],'Power BI':[1,2],'Node.js':[3],'Keras':[3],'Muestreo':[2]};
-  var names=['Fraude','MILPÍN','Observatorio','QchauCoin'];
-  N.push({k:'me',l:'Omar',r:26,c:K.shell});
-  P.forEach(function(p,i){N.push({k:'p',i:i,l:names[i],r:21,c:p.c,id:p.id})});
-  Object.keys(techs).forEach(function(k){N.push({k:'t',l:k,r:7,c:K.lav,ps:techs[k]})});
-  N.forEach(function(n,i){var a=i*2.399;n.x=.5+Math.cos(a)*.3;n.y=.5+Math.sin(a)*.3;n.vx=0;n.vy=0;n.ph=i*1.7});
-  for(var i=1;i<=4;i++)E.push([0,i,.33]);
-  N.forEach(function(n,j){if(n.k==='t')n.ps.forEach(function(pi){E.push([pi+1,j,.21])})});
-  function lit(n){if(!sel)return true;if(n===sel)return true;
-    if(sel.k==='t')return n.k==='p'&&sel.ps.indexOf(n.i)>=0;
-    if(sel.k==='p')return n.k==='t'&&n.ps.indexOf(sel.i)>=0;return true}
-  function tick(){
-    var S=Math.min(W*1.05,H*1.35);
-    for(var i=0;i<N.length;i++){var a=N[i];
-      for(var j=i+1;j<N.length;j++){var b=N[j],dx=(a.x-b.x)*W,dy=(a.y-b.y)*H,d2=dx*dx+dy*dy+60,f=(a.k==='t'&&b.k==='t'?2600:(a.k!=='t'&&b.k!=='t'?16000:6000))/d2,d=Math.sqrt(d2);
-        a.vx+=dx/d*f;a.vy+=dy/d*f;b.vx-=dx/d*f;b.vy-=dy/d*f}
-      a.vx+=(.5-a.x)*W*.0015;a.vy+=(.5-a.y)*H*.003}
-    E.forEach(function(e){var a=N[e[0]],b=N[e[1]],dx=(b.x-a.x)*W,dy=(b.y-a.y)*H,d=Math.sqrt(dx*dx+dy*dy)||1,f=(d-e[2]*S)*.012;
-      a.vx+=dx/d*f;a.vy+=dy/d*f;b.vx-=dx/d*f;b.vy-=dy/d*f});
-    N.forEach(function(n){if(n===drag){n.vx=n.vy=0;return}
-      if(!RM){n.vx+=Math.cos(t*.02+n.ph)*.03;n.vy+=Math.sin(t*.017+n.ph)*.03}
-      n.vx*=.82;n.vy*=.82;n.x+=n.vx/W;n.y+=n.vy/H;
-      n.x=Math.max(.11,Math.min(.89,n.x));n.y=Math.max(.08,Math.min(.9,n.y))});
-  }
-  function draw(){
-    ctx.clearRect(0,0,W,H);
-    E.forEach(function(e,idx){var a=N[e[0]],b=N[e[1]],on=lit(a)&&lit(b)&&(!sel||a===sel||b===sel||e[0]===0);
-      ctx.strokeStyle=b.k==='t'?N[e[0]].c:K.shell;ctx.globalAlpha=sel?(on&&e[0]!==0?.8:.08):.3;ctx.lineWidth=b.k==='t'?1.3:2;
-      ctx.beginPath();ctx.moveTo(a.x*W,a.y*H);ctx.lineTo(b.x*W,b.y*H);ctx.stroke();
-      if(!RM&&(!sel||on)){var u=((t*.006+idx*.37)%1);ctx.globalAlpha=sel?.9:.55;ctx.fillStyle=N[e[0]].c;ctx.beginPath();ctx.arc(a.x*W+(b.x-a.x)*W*u,a.y*H+(b.y-a.y)*H*u,2.2,0,6.283);ctx.fill()}});
-    ctx.globalAlpha=1;ctx.textAlign='center';
-    N.forEach(function(n){var x=n.x*W,y=n.y*H,on=lit(n)||n.k==='me';ctx.globalAlpha=on?1:.25;
-      if(n.k!=='t'){ctx.fillStyle=n.c;ctx.globalAlpha=(on?1:.25)*.16;ctx.beginPath();ctx.arc(x,y,n.r+7+(RM?0:Math.sin(t*.04+n.ph)*2),0,6.283);ctx.fill();ctx.globalAlpha=on?1:.25}
-      ctx.fillStyle=n.k==='t'?'#fff':n.c;ctx.strokeStyle=n.k==='t'?K.accent:'#fff';ctx.lineWidth=2;
-      ctx.beginPath();ctx.arc(x,y,n.r,0,6.283);ctx.fill();ctx.stroke();
-      if(n.k==='t'){ctx.fillStyle=K.ink;ctx.font='600 12px "DM Mono",sans-serif';ctx.fillText(n.l,x,y-n.r-6)}
-      else if(n.k==='me'){ctx.fillStyle='#fff';ctx.font='800 13px "DM Mono",sans-serif';ctx.fillText(n.l,x,y+4.5)}
-      else{ctx.fillStyle='#fff';ctx.font='800 13px "DM Mono",sans-serif';ctx.fillText('0'+(n.i+1),x,y+4.5);ctx.fillStyle=K.ink;ctx.font='800 13px "DM Mono",sans-serif';ctx.fillText(n.l,x,y+n.r+17)}});
-    ctx.globalAlpha=1;
-  }
-  function loop(){t++;tick();draw();raf=requestAnimationFrame(loop)}
-  var settled=false;function size(){var o=fit(cv);ctx=o.x;W=o.w;H=o.h;if(!settled||RM){for(var i=0;i<400;i++)tick();settled=true}draw()}
-  function at(e){var r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,best=null,bd=1e9;
-    N.forEach(function(n){var d=Math.hypot(n.x*W-mx,n.y*H-my)-n.r;if(d<bd){bd=d;best=n}});return bd<16?best:null}
-  cv.addEventListener('pointerdown',function(e){drag=at(e);moved=false;if(drag){cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing'}});
-  cv.addEventListener('pointermove',function(e){if(!drag)return;var r=cv.getBoundingClientRect();moved=true;drag.x=(e.clientX-r.left)/W;drag.y=(e.clientY-r.top)/H;if(RM){for(var i=0;i<30;i++)tick();draw()}});
-  cv.addEventListener('pointerup',function(e){var n=drag;drag=null;cv.style.cursor='grab';if(moved)return;n=n||at(e);
-    if(!n||n.k==='me'){sel=null;cap.innerHTML='<b>Mapa de misiones.</b> Arrastra los nodos. Toca una herramienta para ver dónde se usó, o una misión para ir a ella.'}
-    else if(n.k==='t'){sel=n;cap.innerHTML='<b>'+n.l+'</b> aparece en '+n.ps.length+(n.ps.length>1?' misiones: ':' misión: ')+n.ps.map(function(i){return names[i]}).join(', ')+'.'}
-    else{if(sel===n){go(n.id)}
-      else{sel=n;cap.innerHTML='<b>'+names[n.i]+'.</b> Usa '+N.filter(function(m){return m.k==='t'&&m.ps.indexOf(n.i)>=0}).map(function(m){return m.l}).join(', ')+'. Toca otra vez para ir a la misión.'}}
-    if(RM)draw()});
-  size();window.addEventListener('resize',size);
-  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){if(RM)draw()});
-  if(!RM)onView(cv,function(){if(!raf)loop()},function(){cancelAnimationFrame(raf);raf=0});
-})();
+document.addEventListener('click',function(e){var t=e.target.closest('[data-go],[data-scroll]');if(!t)return;
+ if(t.dataset.go){go(t.dataset.go);return}
+ var n=$(t.dataset.scroll);if(n)n.scrollIntoView({behavior:RM?'auto':'smooth',block:'start'})});
 
 /* ================= SIM 1: FRAUDE ================= */
 (function(){
@@ -737,5 +496,5 @@ function setSkin(id,init){if(!SKINS.some(function(k){return k.id===id}))id='jard
     x.fillStyle=K.alert;x.beginPath();x.arc(X(60),Y(s[60]),5,0,6.283);x.fill();x.fillStyle=K.amber;x.beginPath();x.arc(X(D),Y(s[D]),4,0,6.283);x.fill()}
   $('qs-a').addEventListener('input',upd);$('qs-s').addEventListener('input',upd);upd();window.addEventListener('resize',upd);
 })();
-setSkin((function(){try{return localStorage.getItem('zidnz-skin')}catch(e){return null}})()||'jardin',true);
+renderHome();
 })();
