@@ -309,11 +309,15 @@ function infoGrid(){
  '<div><h3>En números</h3><div class="stats">'+NUM.map(function(n){return '<div class="stat"><b>'+n[0]+'</b><small>'+n[1]+'</small></div>'}).join('')+'</div></div>'+
  '<div><h3>Mis reglas</h3><div class="rules">'+RUL.map(function(r,i){return '<div class="rule"><i>'+(i+1)+'</i><div><b>'+r[0]+'</b><small>'+r[1]+'</small></div></div>'}).join('')+'</div></div></div>'}
 
+/* Descarga del CV en español e inglés */
+var ICO_DL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>';
+function cvRow(){return '<div class="cv"><span>Descargar CV</span><a href="assets/cv/CV_Omar_Gutierrez_Escoto.pdf" download="CV_Omar_Gutierrez_Escoto.pdf" hreflang="es">'+ICO_DL+'Español</a><a href="assets/cv/Resume_Omar_Gutierrez_Escoto.pdf" download="Resume_Omar_Gutierrez_Escoto.pdf" hreflang="en">'+ICO_DL+'English</a></div>'}
+
 function heroHTML(){var tk='Ahora corriendo: lakehouse de fraude en Spark ♪ · · · batch = streaming ✓ · · · ETo del día: 7.1 mm · · · regla de 40 h contra modelos: sin ganador claro · · · QchauCoin = 1.00 · · · gracias por visitar ✦ · · · ';
  return '<div class="h-hero"><div class="wrap hj">'+
  '<aside class="rail"><b>UNRC</b><small>7.º SEM</small>'+artDie('')+'<hr><a href="'+GH+'" target="_blank" rel="noopener noreferrer">GH</a><a href="'+LI+'" target="_blank" rel="noopener noreferrer">IN</a></aside>'+
  '<div class="hj-t"><p class="tagp">OMAR GUTIÉRREZ ESCOTO</p><h1>Datos que<br>toman<br>decisiones</h1><p class="lede">Estudiante de Ciencia de Datos para el Negocio en la UNRC y ex Junior Data Analyst en Veolia. Busco la historia escondida en los datos, la pruebo con rigor y la cuento para que cualquiera la entienda.</p>'+
- '<div class="cta"><button class="btn" type="button" data-scroll="levels-h">Ver misiones ›</button><a class="btn ghost" href="'+GH+'" target="_blank" rel="noopener noreferrer">GitHub ✿</a></div></div>'+
+ '<div class="cta"><button class="btn" type="button" data-scroll="levels-h">Ver misiones ›</button><a class="btn ghost" href="'+GH+'" target="_blank" rel="noopener noreferrer">GitHub ✿</a></div>'+cvRow()+'</div>'+
  heroScene()+'</div>'+
  '<div class="wrap"><div class="ticker">'+artRadio()+'<div class="tk"><div class="tk-in"><span>'+tk+'</span><span>'+tk+'</span></div></div><span class="eq"><i></i><i></i><i></i><i></i></span></div></div></div>'+
  '<div class="h-info"><div class="wrap">'+infoGrid()+'</div></div>'}
@@ -330,6 +334,7 @@ function renderHome(){
  P.forEach(function(p){var x=X[p.id];
   var lv=el('button','lv','<div class="thumb img"><img src="assets/img/'+p.cover+'.webp" alt=""></div><div class="in"><span class="no">MISIÓN '+p.n+'</span><h3>'+p.title+'</h3><dl><dt>Dominio</dt><dd>'+x.card[0]+'</dd><dt>Técnica</dt><dd>'+x.card[1]+'</dd><dt>Resultado</dt><dd>'+RES[p.id]+'</dd></dl><span class="play">Entrar →</span></div>');
   lv.type='button';lv.style.setProperty('--lc',p.c);lv.onclick=function(){go(p.id)};$('levels').appendChild(lv)});
+ $('cta-cv').innerHTML=cvRow();
  var cd=$('cta-deco');cd.innerHTML='<span class="d1">'+artGamepad('')+'</span><span class="d2">'+artDie('')+'</span><span class="d3">'+artChip('Î£','')+'</span>';
  HOME.c=getComputedStyle(document.documentElement).getPropertyValue('--home').trim()||HOME.c;HOME.cs='color-mix(in srgb,'+HOME.c+' 13%,transparent)';tabBtn.inicio.style.setProperty('--tc',HOME.c);
  var cur=Object.keys(views).filter(function(k){return !views[k].hidden})[0]||'inicio';go(cur,true);

@@ -12,6 +12,7 @@ Portafolio web de **Omar Gutiérrez Escoto** (Ciudad de México), Data Scientist
 - Títulos con degradado de color y fondo con rejilla de gráfica en ambos modos.
 - Se adapta a celulares y a pantallas grandes (a partir de 1400 px el contenido se amplía para no dejar márgenes vacíos).
 - Detalles de juego (ventanas, misiones, inventario y cinta animada), ilustraciones vectoriales y tipografía suave.
+- Descarga del CV en español (`CV_Omar_Gutierrez_Escoto.pdf`) y en inglés (`Resume_Omar_Gutierrez_Escoto.pdf`) desde la portada, la tarjeta de contacto y el pie de página.
 - Inventario de herramientas, con las de mi experiencia real en Veolia marcadas (Tableau, Salesforce CRM, CRM Analytics y Looker Studio).
 - Sin dependencias ni paso de compilación: HTML, CSS y JavaScript puros.
 - Respeta `prefers-reduced-motion` y es responsive.
@@ -26,7 +27,8 @@ Portafolio web de **Omar Gutiérrez Escoto** (Ciudad de México), Data Scientist
 ├── js/
 │   └── main.js         # Contenido, simuladores e interacción
 ├── assets/
-│   └── img/            # Capturas y figuras (.webp)
+│   ├── img/            # Capturas y figuras (.webp)
+│   └── cv/             # CV en PDF (español e inglés)
 ├── .nojekyll           # Evita el procesamiento de Jekyll en GitHub Pages
 └── README.md
 ```
