@@ -3,275 +3,231 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QchauCoin · Wallet simulada</title>
-<meta name="description" content="Simulador de la wallet de QchauCoin: llaves RSA 2048, transacciones firmadas y una cadena de bloques SHA-256 que corre en tu navegador.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%2300BFA6'/%3E%3Ctext x='16' y='22' font-size='17' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23101415'%3EQ%3C/text%3E%3C/svg%3E">
+<title>QchauCoin · Wallet</title>
+<meta name="description" content="Demo de la wallet de QchauCoin: llaves RSA 2048, pagos firmados y una cadena de bloques SHA-256 en tu navegador.">
+<meta name="theme-color" content="#00a896">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2300BFA6'/%3E%3Ctext x='16' y='22.5' font-size='17' font-family='Arial' font-weight='800' text-anchor='middle' fill='white'%3EQ%3C/text%3E%3C/svg%3E">
 <style>
-:root{
-  --bg:#0b0f10;--bg2:#11171a;--card:rgba(255,255,255,.045);--card2:rgba(255,255,255,.07);--line:rgba(255,255,255,.09);
-  --ink:#eef4f3;--soft:#9aa9a7;--mute:#64716f;--teal:#00BFA6;--teal2:#5fe3cf;--tealbg:rgba(0,191,166,.12);
-  --red:#ff5c6c;--redbg:rgba(255,92,108,.12);--amber:#f5b84b;--r:18px;
-  --mono:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",Menlo,Consolas,monospace;
-}
+:root{--bg:#f3f6f7;--surface:#fff;--ink:#0f1f24;--soft:#5b6b70;--mute:#93a1a5;--line:#e6ecee;
+--brand:#00BFA6;--brand2:#00897b;--brandbg:#e6f8f5;--red:#e5484d;--redbg:#fdecec;--amber:#c2790a;--ambg:#fff4e0;
+--grad:linear-gradient(135deg,#00c9ad 0%,#00a3a8 45%,#2563eb 120%);--sh:0 1px 2px rgba(16,40,46,.05),0 8px 24px -12px rgba(16,40,46,.18);--r:22px;
+--mono:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",Menlo,Consolas,monospace}
 *{box-sizing:border-box;margin:0;padding:0}
-html{color-scheme:dark}
-body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;min-height:100vh;
-  background-image:radial-gradient(1100px 520px at 85% -10%,rgba(0,191,166,.16),transparent 60%),radial-gradient(800px 500px at -10% 30%,rgba(95,227,207,.07),transparent 60%),
-  linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
-  background-size:auto,auto,44px 44px,44px 44px}
-button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
-input,select{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--teal2);outline-offset:2px;border-radius:8px}
-.wrap{max-width:1180px;margin:0 auto;padding:22px 20px 60px}
+body{font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;min-height:100vh;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input{font:inherit;color:inherit}
+:focus-visible{outline:2.5px solid var(--brand);outline-offset:2px;border-radius:10px}
 .mono{font-family:var(--mono)}
-
-/* barra superior */
-.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:22px}
-.brand{display:flex;align-items:center;gap:11px;font-weight:700;font-size:19px;letter-spacing:-.01em}
-.brand svg{width:34px;height:34px}
-.brand small{display:block;font-weight:500;font-size:12px;color:var(--soft);letter-spacing:.02em}
-.spacer{flex:1}
-.pill{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:13px;color:var(--soft)}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 4px rgba(0,191,166,.18)}
-.pill.bad{color:#ffd0d5;border-color:rgba(255,92,108,.4);background:var(--redbg)}
-.pill.bad .dot{background:var(--red);box-shadow:0 0 0 4px rgba(255,92,108,.2)}
-.back{font-size:13px;color:var(--soft);text-decoration:none}
-.back:hover{color:var(--ink)}
-
-/* tarjetas */
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;backdrop-filter:blur(8px)}
-.card h2{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.grid{display:grid;gap:16px}
-.g-main{grid-template-columns:1.25fr 1fr}
-@media (max-width:900px){.g-main{grid-template-columns:1fr}}
-
-/* bienvenida */
-.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:26px;align-items:center;padding:34px}
-@media (max-width:860px){.hero{grid-template-columns:1fr;padding:24px}}
-.hero h1{font-size:clamp(30px,4.4vw,48px);line-height:1.05;letter-spacing:-.03em;margin-bottom:14px}
-.hero h1 em{font-style:normal;color:var(--teal2)}
-.hero p{color:var(--soft);max-width:52ch;margin-bottom:22px}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
-.field label{font-size:13px;color:var(--soft)}
-.in{background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%}
-.in:focus{border-color:rgba(0,191,166,.6);outline:none;box-shadow:0 0 0 4px rgba(0,191,166,.12)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px;border-radius:12px;background:var(--teal);color:#05201c;font-weight:700;transition:transform .15s,filter .15s}
-.btn:hover{filter:brightness(1.08)}.btn:active{transform:translateY(1px)}
-.btn[disabled]{opacity:.45;cursor:not-allowed;filter:none}
-.btn.ghost{background:var(--card2);color:var(--ink);border:1px solid var(--line);font-weight:600}
-.btn.sm{padding:8px 12px;font-size:13px;border-radius:10px}
-.btn.danger{background:var(--redbg);color:#ffc2c9;border:1px solid rgba(255,92,108,.35);font-weight:600}
-.coin3d{position:relative;aspect-ratio:1;max-width:320px;margin:0 auto;width:100%}
-.coin3d svg{width:100%;height:100%;filter:drop-shadow(0 30px 60px rgba(0,191,166,.25))}
-.spin{animation:float 6s ease-in-out infinite}
-@keyframes float{50%{transform:translateY(-10px) rotate(-3deg)}}
-.steps-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
-.steps-mini div{font-size:12.5px;color:var(--soft);background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:12px;padding:10px}
-.steps-mini b{display:block;color:var(--ink);font-size:13px}
-
-/* llave */
-.keybox{background:rgba(0,0,0,.45);border:1px dashed rgba(245,184,75,.5);border-radius:14px;padding:14px;font-size:11.5px;color:#f6dcaa;max-height:150px;overflow:auto;white-space:pre-wrap;word-break:break-all}
-.warn{display:flex;gap:10px;align-items:flex-start;background:rgba(245,184,75,.1);border:1px solid rgba(245,184,75,.3);color:#f8dca8;border-radius:12px;padding:12px;font-size:13.5px;margin:12px 0}
-
-/* saldo */
-.balance{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(0,191,166,.22),rgba(0,191,166,.04) 55%),var(--card)}
-.balance::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;border:1px solid rgba(95,227,207,.25);box-shadow:0 0 0 30px rgba(95,227,207,.04),0 0 0 60px rgba(95,227,207,.03)}
-.amount{font-size:clamp(36px,5vw,52px);font-weight:750;letter-spacing:-.03em;line-height:1}
-.amount small{font-size:16px;color:var(--soft);font-weight:600;margin-left:6px}
-.fiat{color:var(--soft);margin-top:8px;font-size:14px}
-.addr{display:flex;align-items:center;gap:8px;margin-top:18px;background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:12px;padding:9px 10px 9px 12px;font-size:13px}
-.addr span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
-.kpi{background:rgba(0,0,0,.22);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
-.kpi b{display:block;font-size:17px}
-.kpi span{font-size:12px;color:var(--soft)}
-
-/* contactos */
-.contacts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
-.contact{text-align:left;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:14px;padding:11px;transition:border-color .15s,background .15s}
-.contact:hover{border-color:rgba(255,255,255,.2)}
-.contact[aria-pressed="true"]{border-color:var(--teal);background:var(--tealbg)}
-.av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:13px;color:#081312;margin-bottom:7px}
-.contact b{display:block;font-size:14px}
-.contact span{font-size:11.5px;color:var(--soft)}
-
-/* flujo de firma */
-.flow{display:grid;gap:8px;margin-top:4px}
-.fstep{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.22);opacity:.4;transition:opacity .3s,border-color .3s}
-.fstep.on{opacity:1;border-color:rgba(0,191,166,.45)}
-.fstep.fail{opacity:1;border-color:rgba(255,92,108,.5);background:var(--redbg)}
-.fnum{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:var(--card2)}
-.fstep.on .fnum{background:var(--teal);color:#05201c}
-.fstep.fail .fnum{background:var(--red);color:#2a0509}
-.fstep b{font-size:14px}
-.fstep p{font-size:12px;color:var(--soft);word-break:break-all}
-.fstep code{font-family:var(--mono);font-size:11.5px;color:var(--teal2)}
-
-/* cadena */
-.chain{display:flex;gap:0;overflow-x:auto;padding:6px 2px 14px;scroll-snap-type:x proximity}
-.blk{flex:0 0 210px;scroll-snap-align:start;background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:16px;padding:14px;position:relative;text-align:left;transition:border-color .2s,transform .2s}
-.blk:hover{transform:translateY(-2px)}
-.blk.sel{border-color:rgba(255,255,255,.35)}
-.blk.ok{box-shadow:inset 0 3px 0 var(--teal)}
-.blk.bad{border-color:rgba(255,92,108,.6);background:var(--redbg);box-shadow:inset 0 3px 0 var(--red)}
-.blk.new{animation:pop .6s ease}
-@keyframes pop{0%{transform:scale(.85);opacity:0}100%{transform:none;opacity:1}}
-.blk h3{font-size:15px;display:flex;justify-content:space-between;align-items:center}
-.blk h3 span{font-size:11px;color:var(--soft);font-weight:500}
-.hrow{font-family:var(--mono);font-size:11px;color:var(--soft);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hrow i{font-style:normal;color:var(--mute)}
-.hrow b{color:var(--teal2);font-weight:500}
-.blk.bad .hrow b{color:#ffb0b9}
-.link{flex:0 0 34px;align-self:center;height:2px;background:linear-gradient(90deg,var(--teal),var(--teal2));position:relative}
-.link::after{content:"";position:absolute;right:-1px;top:-4px;border:5px solid transparent;border-left-color:var(--teal2)}
-.link.bad{background:repeating-linear-gradient(90deg,var(--red) 0 6px,transparent 6px 10px)}
-.link.bad::after{border-left-color:var(--red)}
-.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--tealbg);color:var(--teal2);margin-top:8px}
-.tag.bad{background:var(--redbg);color:#ffb0b9}
-
-/* detalle */
-.detail{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
-@media (max-width:760px){.detail{grid-template-columns:1fr}}
-.kv{font-family:var(--mono);font-size:12px;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:12px;padding:12px;word-break:break-all;color:#cfe;line-height:1.6}
-.kv .k{color:var(--mute)}
-.tx{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
-.tx:last-child{border-bottom:0}
-.tx .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:16px;background:var(--card2)}
-.tx b{font-size:14px;display:block}
-.tx small{font-size:12px;color:var(--soft)}
-.tx .amt{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
-.tx .amt small{display:block;font-weight:500}
-.in-amt{color:var(--teal2)}.out-amt{color:#ffd9a3}
-.badge{font-size:11px;padding:2px 7px;border-radius:999px;background:var(--tealbg);color:var(--teal2);margin-left:6px}
-.badge.bad{background:var(--redbg);color:#ffb0b9}
-.empty{color:var(--soft);font-size:14px;padding:14px 0}
-.note{font-size:12.5px;color:var(--mute);margin-top:26px;text-align:center;max-width:80ch;margin-left:auto;margin-right:auto}
-.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#162024;border:1px solid var(--line);padding:12px 16px;border-radius:12px;font-size:14px;opacity:0;transition:.3s;pointer-events:none;max-width:90vw}
-.toast.show{opacity:1;transform:translateX(-50%)}
 .hidden{display:none!important}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-@media (max-width:520px){.contact span{display:none}.contact{padding:9px}}
+.bar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.82);backdrop-filter:saturate(1.6) blur(14px);border-bottom:1px solid var(--line)}
+.bar .in{max-width:1120px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:12px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:750;font-size:17px;letter-spacing:-.01em}
+.logo i{width:32px;height:32px;border-radius:10px;background:var(--grad);display:grid;place-items:center;color:#fff;font-style:normal;font-weight:800}
+.demo{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--ambg);color:var(--amber)}
+.sp{flex:1}
+.chip{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;font-size:13px;font-weight:600;padding:7px 12px;border-radius:999px;background:var(--brandbg);color:var(--brand2)}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.chip.bad{background:var(--redbg);color:var(--red)}
+.icon-btn{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;color:var(--soft);border:1px solid var(--line);background:#fff;text-decoration:none;font-size:15px}
+.icon-btn:hover{color:var(--ink)}
+.wrap{max-width:1120px;margin:0 auto;padding:22px 20px 60px}
+.hero{background:var(--grad);border-radius:28px;color:#fff;padding:28px;position:relative;overflow:hidden;box-shadow:0 20px 40px -20px rgba(0,137,123,.55)}
+.hero::before,.hero::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.12)}
+.hero::before{width:340px;height:340px;right:-90px;top:-150px}
+.hero::after{width:200px;height:200px;right:120px;bottom:-130px;background:rgba(255,255,255,.08)}
+.hero>*{position:relative;z-index:1}
+.lbl{font-size:13px;font-weight:600;opacity:.85}
+.big{font-size:clamp(40px,6vw,60px);font-weight:800;letter-spacing:-.04em;line-height:1.05;font-variant-numeric:tabular-nums}
+.big small{font-size:18px;font-weight:700;opacity:.8;margin-left:6px;letter-spacing:0}
+.fiat{opacity:.85;font-size:14px;margin-top:4px}
+.addr{display:inline-flex;align-items:center;gap:8px;margin-top:16px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);padding:7px 8px 7px 12px;border-radius:12px;font-size:12.5px;max-width:100%}
+.addr span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.addr button{background:#fff;color:var(--brand2);font-weight:700;font-size:12px;padding:5px 10px;border-radius:8px;flex:none}
+.actions{display:flex;gap:18px;margin-top:22px;flex-wrap:wrap}
+.act{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
+.act span{width:52px;height:52px;border-radius:17px;background:#fff;color:var(--brand2);display:grid;place-items:center;font-size:21px;box-shadow:0 6px 16px -8px rgba(0,0,0,.35);transition:transform .15s}
+.act:hover span{transform:translateY(-2px)}
+.stats{position:absolute;right:28px;top:28px;display:flex;gap:10px}
+.stat{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:14px;padding:9px 12px;font-size:12px}
+.stat b{display:block;font-size:16px}
+@media (max-width:760px){.stats{position:static;margin-top:16px}}
+.grid{display:grid;grid-template-columns:1.05fr 1fr;gap:18px;margin-top:18px}
+@media (max-width:880px){.grid{grid-template-columns:1fr}}
+.card{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);padding:22px;border:1px solid rgba(16,40,46,.04)}
+.ch{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.ch h2{font-size:17px;font-weight:750;letter-spacing:-.01em}
+.q{width:22px;height:22px;border-radius:50%;background:var(--bg);color:var(--soft);font-size:12px;font-weight:800;display:grid;place-items:center;position:relative}
+.q:hover,.q[aria-expanded="true"]{background:var(--brandbg);color:var(--brand2)}
+.pop{position:absolute;z-index:30;top:30px;left:-10px;width:260px;background:var(--ink);color:#fff;font-size:12.5px;font-weight:500;line-height:1.45;text-align:left;padding:11px 13px;border-radius:12px;box-shadow:0 12px 30px -10px rgba(0,0,0,.4)}
+.people{display:flex;gap:14px;margin-bottom:18px;overflow-x:auto;padding:4px 2px}
+.person{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--soft);min-width:62px}
+.person .av{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:18px;color:#fff;box-shadow:0 0 0 3px #fff,0 0 0 3px transparent;transition:box-shadow .15s}
+.person[aria-pressed="true"]{color:var(--ink)}
+.person[aria-pressed="true"] .av{box-shadow:0 0 0 3px #fff,0 0 0 5.5px var(--brand)}
+.amount{display:flex;align-items:baseline;gap:6px;border-bottom:2px solid var(--line);padding:4px 2px 8px;margin-bottom:14px;transition:border-color .15s}
+.amount:focus-within{border-color:var(--brand)}
+.amount input{border:0;outline:0;background:transparent;font-size:38px;font-weight:800;letter-spacing:-.03em;width:100%;font-variant-numeric:tabular-nums}
+.amount span{font-weight:700;color:var(--mute)}
+.field{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:13px;padding:12px 14px;outline:0;margin-bottom:14px}
+.field:focus{border-color:var(--brand);background:#fff}
+.btn{width:100%;display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:14px;border-radius:14px;background:var(--ink);color:#fff;font-weight:700;font-size:15px;transition:transform .12s,opacity .12s}
+.btn:hover{opacity:.92}.btn:active{transform:scale(.99)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn.brand{background:var(--grad)}
+.btn.line{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.sm{width:auto;padding:9px 14px;font-size:13.5px;border-radius:11px}
+.err{color:var(--red);font-size:13px;margin-top:10px;min-height:18px}
+.tx{display:grid;grid-template-columns:42px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.tx:last-child{border:0}
+.tx .ic{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-weight:800;color:#fff}
+.tx b{font-size:14.5px;display:block}
+.tx small{font-size:12.5px;color:var(--mute)}
+.tx .amt{font-weight:750;font-variant-numeric:tabular-nums;text-align:right}
+.tx .amt small{display:block}
+.pos{color:var(--brand2)}
+.ok{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:var(--brand2);background:var(--brandbg);padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:2px}
+.ok.bad{color:var(--red);background:var(--redbg)}
+.empty{color:var(--mute);font-size:14px;text-align:center;padding:30px 0}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;position:relative}
+.steps::before{content:"";position:absolute;left:10%;right:10%;top:17px;height:2px;background:var(--line)}
+.stp{text-align:center;position:relative;font-size:12px;color:var(--mute);font-weight:600}
+.stp i{width:36px;height:36px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;background:#fff;border:2px solid var(--line);font-style:normal;font-weight:800;color:var(--mute);transition:.25s}
+.stp.on{color:var(--ink)}.stp.on i{background:var(--brand);border-color:var(--brand);color:#fff}
+.stp.fail i{background:var(--red);border-color:var(--red);color:#fff}
+.trace{margin-top:16px;background:var(--bg);border-radius:14px;padding:12px 14px;font-family:var(--mono);font-size:12px;color:var(--soft);word-break:break-all;min-height:44px}
+.trace b{color:var(--brand2);font-weight:600}
+.chain{display:flex;align-items:center;overflow-x:auto;padding:4px 2px 10px}
+.blk{flex:0 0 176px;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:14px;transition:.2s}
+.blk:hover{border-color:#cfd9dc}
+.blk.sel{border-color:var(--ink)}
+.blk.bad{border-color:var(--red);background:var(--redbg)}
+.blk.new{animation:pop .5s ease}
+@keyframes pop{from{transform:scale(.88);opacity:0}}
+.blk h3{font-size:15px;font-weight:750;display:flex;justify-content:space-between}
+.blk h3 span{font-size:11.5px;color:var(--mute);font-weight:600}
+.blk .h{font-family:var(--mono);font-size:11px;color:var(--mute);margin-top:6px}
+.blk .h b{color:var(--ink);font-weight:500}
+.tag{display:inline-block;margin-top:10px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--brandbg);color:var(--brand2)}
+.blk.bad .tag{background:#fff;color:var(--red)}
+.lnk{flex:0 0 26px;height:2px;background:var(--brand)}
+.lnk.bad{background:repeating-linear-gradient(90deg,var(--red) 0 5px,transparent 5px 9px)}
+.kv{margin-top:14px;background:var(--bg);border-radius:14px;padding:14px;font-family:var(--mono);font-size:12px;line-height:1.7;word-break:break-all}
+.kv .k{color:var(--mute)}
+.welcome{min-height:calc(100vh - 62px);display:grid;place-items:center;padding:24px 20px;background:radial-gradient(800px 420px at 50% -10%,rgba(0,201,173,.22),transparent 70%)}
+.wcard{width:100%;max-width:440px;text-align:center}
+.coin{width:96px;height:96px;margin:0 auto 22px;border-radius:30px;background:var(--grad);display:grid;place-items:center;color:#fff;font-size:46px;font-weight:800;box-shadow:0 24px 40px -18px rgba(0,137,123,.7);animation:fl 5s ease-in-out infinite}
+@keyframes fl{50%{transform:translateY(-8px) rotate(-4deg)}}
+.wcard h1{font-size:34px;letter-spacing:-.035em;line-height:1.1;margin-bottom:10px}
+.wcard p{color:var(--soft);margin-bottom:24px}
+.feat{display:flex;justify-content:center;gap:8px;margin-top:20px;flex-wrap:wrap}
+.feat span{font-size:12.5px;font-weight:600;color:var(--soft);background:#fff;border:1px solid var(--line);padding:6px 11px;border-radius:999px}
+.pem{background:#0f1f24;color:#a7f3e6;border-radius:14px;padding:14px;font-family:var(--mono);font-size:11px;text-align:left;max-height:130px;overflow:auto;white-space:pre-wrap;word-break:break-all;margin:16px 0}
+.warn{background:var(--ambg);color:#8a5506;border-radius:12px;padding:10px 12px;font-size:13px;text-align:left}
+.chk{display:flex;gap:8px;align-items:center;justify-content:center;font-size:14px;color:var(--soft);margin:14px 0}
+.scrim{position:fixed;inset:0;background:rgba(15,31,36,.45);backdrop-filter:blur(4px);z-index:50;display:grid;place-items:center;padding:20px}
+.modal{background:#fff;border-radius:26px;max-width:400px;width:100%;padding:26px;box-shadow:0 30px 60px -20px rgba(0,0,0,.4);text-align:center}
+.modal .em{width:64px;height:64px;border-radius:20px;background:var(--brandbg);margin:0 auto 16px;display:grid;place-items:center;font-size:28px}
+.modal h3{font-size:20px;letter-spacing:-.02em;margin-bottom:8px}
+.modal p{color:var(--soft);font-size:14.5px;margin-bottom:20px}
+.dots{display:flex;gap:6px;justify-content:center;margin-bottom:18px}
+.dots i{width:7px;height:7px;border-radius:99px;background:var(--line);transition:.2s}
+.dots i.on{width:20px;background:var(--brand)}
+.mrow{display:flex;gap:10px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:14px;font-size:14px;font-weight:600;opacity:0;transition:.3s;pointer-events:none;z-index:60}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.foot{text-align:center;color:var(--mute);font-size:12.5px;margin-top:26px}
+.foot button{color:var(--brand2);font-weight:600;text-decoration:underline}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
-    <div class="brand">
-      <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#00BFA6"/><circle cx="20" cy="20" r="14.5" fill="none" stroke="#05201c" stroke-width="2" stroke-dasharray="3 3" opacity=".45"/><text x="20" y="27" text-anchor="middle" font-size="20" font-weight="800" font-family="system-ui,Arial" fill="#05201c">Q</text></svg>
-      <div>QchauCoin<small>Wallet simulada · stablecoin MXN/USD</small></div>
-    </div>
-    <div class="spacer"></div>
-    <span class="pill" id="netPill"><span class="dot"></span><span id="netTxt">Cadena válida</span></span>
-    <span class="pill"><span class="mono" id="height">0</span>&nbsp;bloques</span>
-    <a class="back" href="../#qchaucoin">← Volver al portafolio</a>
-  </header>
+<header class="bar"><div class="in">
+  <div class="logo"><i>Q</i>QchauCoin</div><span class="demo">Demo</span>
+  <div class="sp"></div>
+  <span class="chip hidden" id="netPill"><span id="netTxt">Cadena válida</span></span>
+  <a class="icon-btn" href="../#qchaucoin" aria-label="Volver al portafolio" title="Volver al portafolio">✕</a>
+</div></header>
 
-  <!-- PASO 1: crear wallet -->
-  <section id="onboard" class="card hero">
-    <div>
-      <h1>Tu wallet de <em>QchauCoin</em>, con llaves y bloques de verdad.</h1>
-      <p>Crea una cuenta y recibe tu par de llaves RSA de 2048 bits. Cada envío se firma con tu llave privada, se verifica con tu llave pública y queda en un bloque encadenado con SHA-256. Todo ocurre en tu navegador.</p>
-      <div class="field">
-        <label for="nameIn">¿Cómo te llamas?</label>
-        <input id="nameIn" class="in" maxlength="24" placeholder="Ej. Omar" autocomplete="off">
-      </div>
-      <div class="row"><button class="btn" id="createBtn">Crear mi wallet</button><span id="genTxt" class="mono" style="font-size:13px;color:var(--soft)"></span></div>
-      <div class="steps-mini" style="margin-top:22px">
-        <div><b>1 · Llaves</b>RSA 2048, la privada solo la ves tú</div>
-        <div><b>2 · Firma</b>cada pago va firmado y verificado</div>
-        <div><b>3 · Bloques</b>SHA-256 enlaza cada bloque al anterior</div>
-      </div>
+<section class="welcome" id="onboard"><div class="wcard">
+  <div class="coin">Q</div>
+  <h1>Tu wallet, con llaves de verdad.</h1>
+  <p>Crea tu cuenta y envía tu primer pago firmado.</p>
+  <input id="nameIn" class="field" maxlength="24" placeholder="Tu nombre" autocomplete="off" aria-label="Tu nombre">
+  <button class="btn brand" id="createBtn">Crear wallet</button>
+  <p class="mono" id="genTxt" style="font-size:12.5px;color:var(--mute);margin:12px 0 0"></p>
+  <div class="feat"><span>🔑 RSA 2048</span><span>✍️ Pagos firmados</span><span>⛓ SHA-256</span></div>
+</div></section>
+
+<section class="welcome hidden" id="keyStep"><div class="wcard card" style="padding:28px">
+  <div class="coin" style="width:64px;height:64px;font-size:28px;border-radius:20px;margin-bottom:16px">🔑</div>
+  <h1 style="font-size:24px">Guarda tu llave privada</h1>
+  <p style="margin-bottom:0">Solo se muestra esta vez y firma todos tus pagos.</p>
+  <pre class="pem" id="privPem"></pre>
+  <div class="warn">Quien la tenga puede mover tus fondos. Nunca la compartas.</div>
+  <label class="chk"><input type="checkbox" id="savedChk"> Ya la guardé</label>
+  <div class="mrow"><button class="btn line" id="dlKey">Descargar .pem</button><button class="btn brand" id="enterBtn" disabled>Continuar</button></div>
+</div></section>
+
+<main class="wrap hidden" id="app">
+  <section class="hero">
+    <div class="lbl">Saldo de <span id="who"></span></div>
+    <div class="big"><span id="bal">0.00</span><small>QCC</small></div>
+    <div class="fiat">≈ $<span id="balMxn">0.00</span> MXN · $<span id="balUsd">0.00</span> USD</div>
+    <div class="addr"><span class="mono" id="myAddr"></span><button id="copyAddr">Copiar</button></div>
+    <div class="actions">
+      <button class="act" id="goSend"><span>↗</span>Enviar</button>
+      <button class="act" id="reqBtn"><span>↙</span>Pedir</button>
+      <button class="act" id="goChain"><span>⛓</span>Cadena</button>
+      <button class="act" id="tourBtn"><span>?</span>Ayuda</button>
     </div>
-    <div class="coin3d"><svg class="spin" viewBox="0 0 200 200" aria-hidden="true">
-      <defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5fe3cf"/><stop offset="1" stop-color="#00a38e"/></linearGradient></defs>
-      <ellipse cx="100" cy="108" rx="78" ry="78" fill="#007a6b"/>
-      <circle cx="100" cy="100" r="78" fill="url(#cg)"/>
-      <circle cx="100" cy="100" r="62" fill="none" stroke="#05201c" stroke-opacity=".35" stroke-width="3" stroke-dasharray="5 6"/>
-      <text x="100" y="124" text-anchor="middle" font-size="76" font-weight="800" font-family="system-ui,Arial" fill="#05201c">Q</text>
-      <g font-family="ui-monospace,monospace" font-size="9" fill="#9aa9a7"><text x="8" y="22">sha256(bloque)</text><text x="112" y="192">firma RSA-2048</text></g>
-    </svg></div>
+    <div class="stats"><div class="stat"><b>1 QCC</b>= 1 MXN</div><div class="stat"><b>70/30</b>MXN/USD</div><div class="stat"><b id="height">0</b>bloques</div></div>
   </section>
 
-  <!-- PASO 1b: mostrar llave privada -->
-  <section id="keyStep" class="card hidden" style="max-width:760px;margin:0 auto">
-    <h2>🔑 Tu llave privada · se muestra una sola vez</h2>
-    <p style="color:var(--soft);font-size:14px">Esta llave firma tus pagos. En el proyecto original el servidor la entrega al registrarte y nunca la guarda; aquí tampoco sale de tu navegador.</p>
-    <div class="warn">⚠️ <span>Quien tenga esta llave puede mover tus fondos. Guárdala fuera de línea y no la compartas.</span></div>
-    <pre class="keybox mono" id="privPem"></pre>
-    <div class="row" style="margin-top:14px">
-      <button class="btn ghost" id="dlKey">Descargar llave (.pem)</button>
-      <label class="row" style="gap:8px;font-size:14px;color:var(--soft)"><input type="checkbox" id="savedChk"> Ya la guardé</label>
-      <div class="spacer"></div>
-      <button class="btn" id="enterBtn" disabled>Entrar a mi wallet →</button>
-    </div>
-  </section>
-
-  <!-- PASO 2: wallet -->
-  <main id="app" class="hidden">
-    <div class="grid g-main">
-      <section class="card balance">
-        <h2>Saldo de <span id="who"></span></h2>
-        <div class="amount"><span id="bal">0.00</span><small>QCC</small></div>
-        <div class="fiat">≈ <span id="balMxn">0.00</span> MXN · <span id="balUsd">0.00</span> USD</div>
-        <div class="addr"><span class="mono" id="myAddr"></span><button class="btn ghost sm" id="copyAddr">Copiar</button></div>
-        <div class="kpis">
-          <div class="kpi"><b>1.00 MXN</b><span>valor de 1 QCC</span></div>
-          <div class="kpi"><b>70 / 30</b><span>respaldo MXN / USD</span></div>
-          <div class="kpi"><b id="txCount">0</b><span>transacciones tuyas</span></div>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>Enviar QchauCoin</h2>
-        <div class="contacts" id="contacts" role="group" aria-label="Destinatario"></div>
-        <div class="row" style="gap:12px">
-          <div class="field" style="flex:1;min-width:130px"><label for="amtIn">Cantidad (QCC)</label><input id="amtIn" class="in" type="number" min="0.01" step="0.01" placeholder="150.00"></div>
-          <div class="field" style="flex:1.4;min-width:150px"><label for="conIn">Concepto</label><input id="conIn" class="in" maxlength="40" placeholder="Tacos del viernes"></div>
-        </div>
-        <div class="row"><button class="btn" id="sendBtn">Firmar y enviar</button><button class="btn ghost" id="reqBtn">Pedir que me paguen</button></div>
-        <p id="sendErr" class="mono" style="color:#ffb0b9;font-size:13px;margin-top:10px"></p>
-      </section>
-    </div>
-
-    <div class="grid g-main" style="margin-top:16px">
-      <section class="card">
-        <h2>Cómo viaja tu última transacción</h2>
-        <div class="flow" id="flow">
-          <div class="fstep" data-s="0"><span class="fnum">1</span><div><b>Construir la transacción</b><p id="f0">Origen, destino, cantidad, concepto y hora.</p></div></div>
-          <div class="fstep" data-s="1"><span class="fnum">2</span><div><b>Firmar con la llave privada</b><p id="f1">RSASSA-PKCS1-v1_5 con SHA-256.</p></div></div>
-          <div class="fstep" data-s="2"><span class="fnum">3</span><div><b>Verificar con la llave pública</b><p id="f2">Cualquiera puede comprobarla; nadie puede falsificarla.</p></div></div>
-          <div class="fstep" data-s="3"><span class="fnum">4</span><div><b>Revisar el saldo</b><p id="f3">No se puede gastar lo que no hay.</p></div></div>
-          <div class="fstep" data-s="4"><span class="fnum">5</span><div><b>Agregar el bloque a la cadena</b><p id="f4">Su hash incluye el hash del bloque anterior.</p></div></div>
-        </div>
-      </section>
-      <section class="card">
-        <h2>Historial</h2>
-        <div id="history"><p class="empty">Todavía no hay movimientos.</p></div>
-      </section>
-    </div>
-
-    <section class="card" style="margin-top:16px">
-      <div class="row" style="margin-bottom:12px"><h2 style="margin:0">Explorador de la cadena</h2><div class="spacer"></div>
-        <button class="btn danger sm" id="tamperBtn">Alterar el bloque seleccionado</button>
-        <button class="btn ghost sm" id="repairBtn">Restaurar la cadena</button></div>
-      <p style="color:var(--soft);font-size:13.5px;margin-bottom:12px">Selecciona un bloque y altéralo: cambia la cantidad de una transacción vieja. Su hash ya no coincide, su firma tampoco, y todos los bloques que siguen quedan desconectados.</p>
-      <div class="chain" id="chain"></div>
-      <div class="detail" id="detail"></div>
+  <div class="grid">
+    <section class="card" id="sendCard">
+      <div class="ch"><h2>Enviar</h2><button class="q" data-pop="Tu pago se firma con tu llave privada y cualquiera puede verificarlo con tu llave pública. Si no hay saldo, se rechaza.">?</button></div>
+      <div class="people" id="contacts" role="group" aria-label="Destinatario"></div>
+      <label class="amount"><input id="amtIn" type="number" min="0.01" step="0.01" placeholder="0.00" inputmode="decimal" aria-label="Cantidad"><span>QCC</span></label>
+      <input id="conIn" class="field" maxlength="40" placeholder="Concepto (opcional)" aria-label="Concepto">
+      <button class="btn" id="sendBtn">Firmar y enviar</button>
+      <p class="err" id="sendErr"></p>
     </section>
+    <section class="card">
+      <div class="ch"><h2>Actividad</h2><span class="sp"></span><span style="font-size:12.5px;color:var(--mute)" id="txCount"></span></div>
+      <div id="history"><p class="empty">Aún no hay movimientos.</p></div>
+    </section>
+  </div>
 
-    <p class="note">Simulador académico del proyecto QchauCoin. No es una moneda real ni mueve dinero. Las llaves, firmas y hashes son reales (Web Crypto API), pero no hay prueba de trabajo ni red de nodos: es una sola cadena guardada en la memoria de esta pestaña. Si recargas la página, empieza de cero.</p>
-  </main>
-</div>
+  <section class="card" style="margin-top:18px">
+    <div class="ch"><h2>Tu último pago</h2><button class="q" data-pop="Así viaja cada pago: se arma, se firma con RSA, se verifica, se revisa el saldo y se guarda en un bloque nuevo.">?</button></div>
+    <div class="steps" id="flow">
+      <div class="stp" data-s="0"><i>1</i>Armar</div><div class="stp" data-s="1"><i>2</i>Firmar</div><div class="stp" data-s="2"><i>3</i>Verificar</div><div class="stp" data-s="3"><i>4</i>Saldo</div><div class="stp" data-s="4"><i>5</i>Bloque</div>
+    </div>
+    <div class="trace" id="trace">Envía un pago para verlo paso a paso.</div>
+  </section>
+
+  <section class="card" style="margin-top:18px" id="chainCard">
+    <div class="ch"><h2>Cadena</h2><button class="q" data-pop="Cada bloque guarda el hash del anterior. Si alteras un bloque viejo, su hash y su firma dejan de coincidir y el enlace con los siguientes se rompe.">?</button>
+      <span class="sp"></span><button class="btn line sm" id="tamperBtn">Alterar bloque</button><button class="btn line sm" id="repairBtn">Restaurar</button></div>
+    <div class="chain" id="chain"></div>
+    <div class="kv" id="detail"></div>
+  </section>
+
+  <p class="foot">Demo académica: no es dinero real. <button id="aboutBtn">Cómo funciona</button></p>
+</main>
+
+<div class="scrim hidden" id="tour" role="dialog" aria-modal="true" aria-labelledby="tTitle"><div class="modal">
+  <div class="em" id="tEm"></div><div class="dots" id="tDots"></div>
+  <h3 id="tTitle"></h3><p id="tText"></p>
+  <div class="mrow"><button class="btn line" id="tSkip">Cerrar</button><button class="btn brand" id="tNext">Siguiente</button></div>
+</div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 "use strict";
 var C=window.crypto.subtle,enc=new TextEncoder();
 var ALG={name:"RSASSA-PKCS1-v1_5",modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:"SHA-256"};
-var TASA_USD=0.0585;
-var $=function(id){return document.getElementById(id)};
+var TASA_USD=0.0585,$=function(id){return document.getElementById(id)};
 function hex(buf){return Array.prototype.map.call(new Uint8Array(buf),function(b){return("0"+b.toString(16)).slice(-2)}).join("")}
 function b64(buf){var s="",a=new Uint8Array(buf);for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s)}
 function unb64(s){var b=atob(s),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
@@ -280,173 +236,137 @@ function sha(s){return C.digest("SHA-256",enc.encode(s)).then(hex)}
 function fmt(n){return n.toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2})}
 function short(h,n){n=n||10;return h?h.slice(0,n)+"…"+h.slice(-4):"—"}
 function sleep(ms){return new Promise(function(r){setTimeout(r,matchMedia("(prefers-reduced-motion: reduce)").matches?0:ms)})}
-function toast(t){var e=$("toast");e.textContent=t;e.classList.add("show");clearTimeout(toast.k);toast.k=setTimeout(function(){e.classList.remove("show")},2600)}
+function toast(t){var e=$("toast");e.textContent=t;e.classList.add("show");clearTimeout(toast.k);toast.k=setTimeout(function(){e.classList.remove("show")},2400)}
 
-/* ---------- cuentas ---------- */
+/* ayudas "?" */
+document.querySelectorAll(".q").forEach(function(q){q.setAttribute("aria-label","Ayuda");q.setAttribute("aria-expanded","false")});
+document.addEventListener("click",function(e){
+  var q=e.target.closest(".q");
+  document.querySelectorAll(".pop").forEach(function(p){if(!q||p.parentNode!==q){p.parentNode.setAttribute("aria-expanded","false");p.remove()}});
+  if(q&&!q.querySelector(".pop")){var p=document.createElement("span");p.className="pop";p.textContent=q.dataset.pop;q.appendChild(p);q.setAttribute("aria-expanded","true")}
+});
+
+/* recorrido y "cómo funciona" */
+var SETS={tour:[["👋","Esta es tu wallet","Tu saldo, tu dirección pública y accesos rápidos para enviar, pedir y ver la cadena."],
+ ["✍️","Cada pago va firmado","Al enviar, tu llave privada firma el pago y tu llave pública lo verifica. Lo ves paso a paso."],
+ ["⛓","Rompe la cadena","En Cadena, altera un bloque viejo: su hash deja de coincidir y la cadena se marca como rota."]],
+ about:[["🔑","Llaves","RSA 2048 con Web Crypto. La privada no sale de tu navegador; en el proyecto original el servidor la entrega una vez y no la guarda."],
+ ["⛓","Bloques","Cada bloque guarda sus pagos, su hora y el hash SHA-256 del anterior. El original los guarda en MongoDB con transacciones atómicas."],
+ ["⚠️","Límites","Demo académica: sin prueba de trabajo ni red de nodos. Al recargar la página empieza de cero."]]},cur=[],tI=0;
+function show(set,i){cur=SETS[set]||cur;tI=i;if(i>=cur.length){$("tour").classList.add("hidden");return}var t=cur[i];$("tour").classList.remove("hidden");
+  $("tEm").textContent=t[0];$("tTitle").textContent=t[1];$("tText").textContent=t[2];
+  $("tDots").innerHTML=cur.map(function(_,j){return'<i class="'+(j===i?"on":"")+'"></i>'}).join("");$("tNext").textContent=i===cur.length-1?"Listo":"Siguiente";$("tNext").focus()}
+$("tNext").onclick=function(){show(null,tI+1)};$("tSkip").onclick=function(){show(null,99)};
+$("tourBtn").onclick=function(){show("tour",0)};$("aboutBtn").onclick=function(){show("about",0)};
+document.addEventListener("keydown",function(e){if(e.key==="Escape")show(null,99)});
+
+/* cuentas y cadena */
 var accounts={},me=null,selected=null,chain=[],backup=null,selBlock=null;
-var PEOPLE=[{n:"Ana",c:"#5fe3cf",d:"Amiga"},{n:"Luis",c:"#f5b84b",d:"Compañero"},{n:"La Esquina",c:"#c6a7ff",d:"Tienda"}];
+var PEOPLE=[{n:"Ana",c:"#7c3aed"},{n:"Luis",c:"#f59e0b"},{n:"La Esquina",c:"#ec4899"}];
 function newAccount(name,color){
   return C.generateKey(ALG,true,["sign","verify"]).then(function(kp){
     return Promise.all([C.exportKey("spki",kp.publicKey),C.exportKey("pkcs8",kp.privateKey)]).then(function(r){
-      return C.digest("SHA-256",r[0]).then(function(d){
-        var a={name:name,color:color,keys:kp,spki:b64(r[0]),pkcs8:r[1],addr:"qc1"+hex(d).slice(0,37)};
-        accounts[a.addr]=a;return a;
-      });
+      return C.digest("SHA-256",r[0]).then(function(d){var a={name:name,color:color,keys:kp,spki:b64(r[0]),pkcs8:r[1],addr:"qc1"+hex(d).slice(0,37)};accounts[a.addr]=a;return a});
     });
   });
 }
 function txBody(t){return JSON.stringify({de:t.de,para:t.para,cantidad:t.cantidad,concepto:t.concepto,hora:t.hora})}
 function signTx(acc,t){return C.sign(ALG.name,acc.keys.privateKey,enc.encode(txBody(t))).then(function(s){t.firma=b64(s);t.llavePublica=acc.spki;return t})}
-function verifyTx(t){
-  return C.importKey("spki",unb64(t.llavePublica),{name:ALG.name,hash:"SHA-256"},false,["verify"]).then(function(k){
-    return C.verify(ALG.name,k,unb64(t.firma),enc.encode(txBody(t)));
-  });
-}
-
-/* ---------- cadena ---------- */
+function verifyTx(t){return C.importKey("spki",unb64(t.llavePublica),{name:ALG.name,hash:"SHA-256"},false,["verify"]).then(function(k){return C.verify(ALG.name,k,unb64(t.firma),enc.encode(txBody(t)))})}
 function blockBody(b){return JSON.stringify({indice:b.indice,hora:b.hora,transacciones:b.transacciones,hashAnterior:b.hashAnterior})}
-function makeBlock(txs){
-  var prev=chain.length?chain[chain.length-1].hash:"0".repeat(64);
-  var b={indice:chain.length,hora:new Date().toISOString(),transacciones:txs,hashAnterior:prev};
-  return sha(blockBody(b)).then(function(h){b.hash=h;chain.push(b);return b});
-}
-function balances(){
-  var s={};chain.forEach(function(b){b.transacciones.forEach(function(t){
-    if(t.de!=="RESERVA")s[t.de]=(s[t.de]||0)-t.cantidad;s[t.para]=(s[t.para]||0)+t.cantidad})});
-  return s;
-}
-/* valida cada bloque: hash propio, enlace con el anterior y firmas */
+function makeBlock(txs){var prev=chain.length?chain[chain.length-1].hash:"0".repeat(64);var b={indice:chain.length,hora:new Date().toISOString(),transacciones:txs,hashAnterior:prev};return sha(blockBody(b)).then(function(h){b.hash=h;chain.push(b);return b})}
+function balances(){var s={};chain.forEach(function(b){b.transacciones.forEach(function(t){if(t.de!=="RESERVA")s[t.de]=(s[t.de]||0)-t.cantidad;s[t.para]=(s[t.para]||0)+t.cantidad})});return s}
+/* hash propio, enlace con el hash real del anterior y firmas */
 function validate(){
   return chain.reduce(function(p,b,i){return p.then(function(acc){
     return sha(blockBody(b)).then(function(h){
       var okHash=h===b.hash,okLink=i===0||b.hashAnterior===acc[i-1].real;
-      return Promise.all(b.transacciones.map(function(t){return t.de==="RESERVA"?true:verifyTx(t)})).then(function(sigs){
-        var okSig=sigs.every(Boolean);
-        acc.push({okHash:okHash,okLink:okLink,okSig:okSig,sigs:sigs,real:h});
-        return acc;
-      });
+      return Promise.all(b.transacciones.map(function(t){return t.de==="RESERVA"?true:verifyTx(t)})).then(function(sigs){acc.push({okHash:okHash,okLink:okLink,okSig:sigs.every(Boolean),sigs:sigs,real:h});return acc});
     });
   })},Promise.resolve([]));
 }
-
-/* ---------- interfaz ---------- */
-function nameOf(addr){if(addr==="RESERVA")return"Reserva QchauCoin";var a=accounts[addr];return a?(a===me?"Tú":a.name):short(addr,8)}
+function nameOf(a){if(a==="RESERVA")return"Reserva QchauCoin";var x=accounts[a];return x?(x===me?"Tú":x.name):short(a,8)}
+function colorOf(a){return a==="RESERVA"?"#0f1f24":(accounts[a]||{}).color||"#93a1a5"}
 function renderContacts(){
   var box=$("contacts");box.innerHTML="";
   Object.keys(accounts).forEach(function(k){var a=accounts[k];if(a===me)return;
-    var b=document.createElement("button");b.className="contact";b.type="button";b.setAttribute("aria-pressed",selected===a.addr);
-    b.innerHTML='<div class="av" style="background:'+a.color+'">'+a.name[0]+'</div><b>'+a.name+'</b><span class="mono">'+short(a.addr,7)+'</span>';
-    b.onclick=function(){selected=a.addr;renderContacts()};box.appendChild(b);
-  });
+    var b=document.createElement("button");b.className="person";b.type="button";b.setAttribute("aria-pressed",String(selected===a.addr));b.title=a.addr;
+    b.innerHTML='<span class="av" style="background:'+a.color+'">'+a.name[0]+'</span>'+a.name;b.onclick=function(){selected=a.addr;renderContacts()};box.appendChild(b)});
 }
 function render(){
   return validate().then(function(v){
-    var bal=balances(),mine=bal[me.addr]||0;
-    $("bal").textContent=fmt(mine);$("balMxn").textContent=fmt(mine);$("balUsd").textContent=fmt(mine*TASA_USD);
-    $("height").textContent=chain.length;
+    var mine=balances()[me.addr]||0;
+    $("bal").textContent=fmt(mine);$("balMxn").textContent=fmt(mine);$("balUsd").textContent=fmt(mine*TASA_USD);$("height").textContent=chain.length;
     var bad=v.some(function(x){return!(x.okHash&&x.okLink&&x.okSig)});
-    $("netPill").classList.toggle("bad",bad);$("netTxt").textContent=bad?"Cadena rota: alguien la alteró":"Cadena válida";
-    /* explorador */
+    $("netPill").classList.toggle("bad",bad);$("netTxt").textContent=bad?"Cadena rota":"Cadena válida";
     var box=$("chain");box.innerHTML="";
     chain.forEach(function(b,i){
-      if(i){var l=document.createElement("div");l.className="link"+(v[i].okLink?"":" bad");box.appendChild(l)}
-      var ok=v[i].okHash&&v[i].okLink&&v[i].okSig;
-      var d=document.createElement("button");d.type="button";d.className="blk "+(ok?"ok":"bad")+(selBlock===i?" sel":"")+(b._new?" new":"");b._new=false;
-      d.setAttribute("aria-label","Bloque "+i);
-      d.innerHTML='<h3>Bloque #'+i+'<span>'+b.transacciones.length+' tx</span></h3>'+
-        '<div class="hrow"><i>anterior </i>'+short(b.hashAnterior,8)+'</div><div class="hrow"><i>hash </i><b>'+short(b.hash,10)+'</b></div>'+
-        '<span class="tag'+(ok?'':' bad')+'">'+(ok?(i===0?"Génesis":"Válido"):(!v[i].okHash?"Hash no coincide":!v[i].okLink?"Enlace roto":"Firma inválida"))+'</span>';
-      d.onclick=function(){selBlock=i;render()};box.appendChild(d);
-    });
+      if(i){var l=document.createElement("div");l.className="lnk"+(v[i].okLink?"":" bad");box.appendChild(l)}
+      var ok=v[i].okHash&&v[i].okLink&&v[i].okSig,d=document.createElement("button");d.type="button";
+      d.className="blk"+(ok?"":" bad")+(selBlock===i?" sel":"")+(b._new?" new":"");b._new=false;
+      d.innerHTML='<h3>#'+i+'<span>'+b.transacciones.length+' pago'+(b.transacciones.length>1?'s':'')+'</span></h3><div class="h">hash <b>'+short(b.hash,8)+'</b></div><div class="h">prev '+short(b.hashAnterior,8)+'</div>'+
+        '<span class="tag">'+(ok?(i===0?"Génesis":"Válido"):(!v[i].okHash?"Hash alterado":!v[i].okLink?"Enlace roto":"Firma inválida"))+'</span>';
+      d.onclick=function(){selBlock=i;render()};box.appendChild(d)});
     if(selBlock===null)selBlock=chain.length-1;
     var sb=chain[selBlock],sv=v[selBlock];
-    $("detail").innerHTML='<div class="kv"><span class="k">índice:</span> '+sb.indice+'<br><span class="k">hora:</span> '+sb.hora+'<br><span class="k">hashAnterior:</span> '+sb.hashAnterior+'<br><span class="k">hash guardado:</span> '+sb.hash+
-      '<br><span class="k">hash recalculado:</span> <span style="color:'+(sv.okHash?'var(--teal2)':'var(--red)')+'">'+sv.real+'</span></div>'+
-      '<div class="kv">'+sb.transacciones.map(function(t,j){return'<span class="k">tx '+j+':</span> '+nameOf(t.de)+' → '+nameOf(t.para)+' · '+fmt(t.cantidad)+' QCC<br><span class="k">firma:</span> '+(t.firma?short(hex(unb64(t.firma)),16)+(sv.sigs[j]?' <span style="color:var(--teal2)">✓ verificada</span>':' <span style="color:var(--red)">✗ no coincide</span>'):'emisión de la reserva')}).join("<br><br>")+'</div>';
+    $("detail").innerHTML='<span class="k">bloque</span> #'+sb.indice+' · '+sb.transacciones.map(function(t){return nameOf(t.de)+' → '+nameOf(t.para)+' '+fmt(t.cantidad)+' QCC'}).join(" · ")+
+      '<br><span class="k">hash guardado</span> '+sb.hash+'<br><span class="k">hash calculado</span> <span style="color:'+(sv.okHash?'var(--brand2)':'var(--red)')+'">'+sv.real+'</span>';
     $("tamperBtn").disabled=selBlock===0;
-    /* historial */
     var rows=[];chain.forEach(function(b,i){b.transacciones.forEach(function(t,j){if(t.de===me.addr||t.para===me.addr)rows.push({t:t,b:i,ok:v[i].sigs[j]})})});
-    $("txCount").textContent=rows.length;
-    $("history").innerHTML=rows.length?rows.reverse().slice(0,7).map(function(r){var out=r.t.de===me.addr;
-      return'<div class="tx"><div class="ic">'+(out?'↗':'↙')+'</div><div><b>'+(out?'Para '+nameOf(r.t.para):'De '+nameOf(r.t.de))+(r.t.de==="RESERVA"?'':'<span class="badge'+(r.ok?'':' bad')+'">'+(r.ok?'firma ✓':'firma ✗')+'</span>')+'</b><small>'+r.t.concepto+' · bloque #'+r.b+'</small></div>'+
-      '<div class="amt '+(out?'out-amt':'in-amt')+'">'+(out?'−':'+')+fmt(r.t.cantidad)+'<small>QCC</small></div></div>'}).join(""):'<p class="empty">Todavía no hay movimientos.</p>';
+    $("txCount").textContent=rows.length+" movimiento"+(rows.length===1?"":"s");
+    $("history").innerHTML=rows.length?rows.reverse().slice(0,6).map(function(r){var out=r.t.de===me.addr,other=out?r.t.para:r.t.de;
+      return'<div class="tx"><div class="ic" style="background:'+colorOf(other)+'">'+nameOf(other)[0]+'</div><div><b>'+nameOf(other)+(r.t.de==="RESERVA"?'':'<span class="ok'+(r.ok?'':' bad')+'">'+(r.ok?'✓ firmado':'✗ firma')+'</span>')+'</b><small>'+r.t.concepto+'</small></div>'+
+      '<div class="amt '+(out?'':'pos')+'">'+(out?'−':'+')+fmt(r.t.cantidad)+'<small style="color:var(--mute);font-weight:500">QCC</small></div></div>'}).join(""):'<p class="empty">Aún no hay movimientos.</p>';
   });
 }
-function flow(i,state,text){var s=document.querySelector('.fstep[data-s="'+i+'"]');s.className="fstep "+(state||"");if(text)$("f"+i).innerHTML=text}
-function resetFlow(){for(var i=0;i<5;i++)flow(i,"")}
-
+function flow(i,state){document.querySelector('.stp[data-s="'+i+'"]').className="stp "+(state||"")}
+function trace(h){$("trace").innerHTML=h}
 function transfer(from,to,amount,concept){
   var t={de:from.addr,para:to.addr,cantidad:Math.round(amount*100)/100,concepto:concept||"Sin concepto",hora:new Date().toISOString()};
-  resetFlow();
-  flow(0,"on",'<code>'+nameOf(t.de)+' → '+nameOf(t.para)+' · '+fmt(t.cantidad)+' QCC · "'+t.concepto+'"</code>');
-  return sleep(450).then(function(){return signTx(from,t)}).then(function(){
-    flow(1,"on",'Firma ('+unb64(t.firma).length*8+' bits): <code>'+short(hex(unb64(t.firma)),24)+'</code>');
-    return sleep(450).then(function(){return verifyTx(t)});
-  }).then(function(ok){
-    flow(2,ok?"on":"fail",ok?(t.de===me.addr?'Tu llave pública':'La llave pública de '+nameOf(t.de))+' confirma la firma ✓':'La firma no corresponde ✗');
-    if(!ok)throw new Error("Firma inválida");
-    return sleep(450);
-  }).then(function(){
-    var have=balances()[t.de]||0;
-    if(have<t.cantidad){flow(3,"fail",'Saldo de '+fmt(have)+' QCC: no alcanza para '+fmt(t.cantidad)+' ✗');throw new Error("Saldo insuficiente")}
-    flow(3,"on",'Saldo previo '+fmt(have)+' QCC → queda '+fmt(have-t.cantidad)+' QCC ✓');
-    return sleep(450).then(function(){return makeBlock([t])});
-  }).then(function(b){
-    b._new=true;selBlock=b.indice;
-    flow(4,"on",'Bloque #'+b.indice+' · hash <code>'+short(b.hash,14)+'</code> enlazado a <code>'+short(b.hashAnterior,10)+'</code>');
-    return render();
-  });
+  for(var i=0;i<5;i++)flow(i,"");
+  flow(0,"on");trace(nameOf(t.de)+' → '+nameOf(t.para)+' · <b>'+fmt(t.cantidad)+' QCC</b>');
+  return sleep(380).then(function(){return signTx(from,t)}).then(function(){flow(1,"on");trace('firma RSA-2048 <b>'+short(hex(unb64(t.firma)),28)+'</b>');return sleep(380).then(function(){return verifyTx(t)})})
+  .then(function(ok){flow(2,ok?"on":"fail");if(!ok){trace("La firma no corresponde.");throw new Error("Firma inválida")}trace('firma verificada con la llave pública ✓');return sleep(380)})
+  .then(function(){var have=balances()[t.de]||0;if(have<t.cantidad){flow(3,"fail");trace('saldo '+fmt(have)+' QCC · no alcanza');throw new Error("Saldo insuficiente")}
+    flow(3,"on");trace('saldo '+fmt(have)+' → <b>'+fmt(have-t.cantidad)+' QCC</b>');return sleep(380).then(function(){return makeBlock([t])})})
+  .then(function(b){b._new=true;selBlock=b.indice;flow(4,"on");trace('bloque #'+b.indice+' · hash <b>'+short(b.hash,16)+'</b> · prev '+short(b.hashAnterior,10));return render()});
 }
 
-/* ---------- eventos ---------- */
+/* eventos */
 $("createBtn").onclick=function(){
-  var name=($("nameIn").value||"").trim()||"Tú";
-  var btn=this;btn.disabled=true;$("genTxt").textContent="Generando llaves RSA 2048…";
-  var t0=performance.now();
+  var name=($("nameIn").value||"").trim()||"Tú",btn=this;btn.disabled=true;btn.textContent="Generando llaves…";var t0=performance.now();
   newAccount(name,"#00BFA6").then(function(a){
-    me=a;$("genTxt").textContent="Listo en "+Math.round(performance.now()-t0)+" ms";
-    $("privPem").textContent=pem(a.pkcs8,"PRIVATE KEY");
+    me=a;$("genTxt").textContent="RSA 2048 en "+Math.round(performance.now()-t0)+" ms";$("privPem").textContent=pem(a.pkcs8,"PRIVATE KEY");
     $("onboard").classList.add("hidden");$("keyStep").classList.remove("hidden");
-    /* las demás cuentas y el bloque génesis se preparan mientras lees */
     return Promise.all(PEOPLE.map(function(p){return newAccount(p.n,p.c)}));
-  }).then(function(others){
-    var hora=new Date().toISOString(),seed=[[me,1000],[others[0],500],[others[1],300],[others[2],200]];
-    return makeBlock(seed.map(function(s){return{de:"RESERVA",para:s[0].addr,cantidad:s[1],concepto:"Emisión inicial respaldada",hora:hora}})).then(function(){
-      selected=others[0].addr;var ready=$("savedChk").checked;$("enterBtn").dataset.ready="1";$("enterBtn").disabled=!ready;
-    });
-  }).catch(function(e){$("genTxt").textContent="Tu navegador no permitió generar llaves: "+e.message;btn.disabled=false});
+  }).then(function(o){var h=new Date().toISOString(),seed=[[me,1000],[o[0],500],[o[1],300],[o[2],200]];
+    return makeBlock(seed.map(function(s){return{de:"RESERVA",para:s[0].addr,cantidad:s[1],concepto:"Emisión inicial",hora:h}})).then(function(){selected=o[0].addr;$("enterBtn").dataset.ready="1";$("enterBtn").disabled=!$("savedChk").checked})
+  }).catch(function(e){$("genTxt").textContent="Tu navegador no permitió generar llaves: "+e.message;btn.disabled=false;btn.textContent="Crear wallet"});
 };
 $("nameIn").addEventListener("keydown",function(e){if(e.key==="Enter")$("createBtn").click()});
 $("savedChk").onchange=function(){$("enterBtn").disabled=!(this.checked&&$("enterBtn").dataset.ready)};
 $("dlKey").onclick=function(){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([$("privPem").textContent],{type:"application/x-pem-file"}));a.download="qchaucoin_llave_privada.pem";a.click();$("savedChk").checked=true;$("savedChk").onchange.call($("savedChk"))};
-$("enterBtn").onclick=function(){
-  $("keyStep").classList.add("hidden");$("app").classList.remove("hidden");
-  $("who").textContent=me.name;$("myAddr").textContent=me.addr;renderContacts();render();
-};
+$("enterBtn").onclick=function(){$("keyStep").classList.add("hidden");$("app").classList.remove("hidden");$("netPill").classList.remove("hidden");
+  $("who").textContent=me.name;$("myAddr").textContent=me.addr;renderContacts();render().then(function(){show("tour",0)})};
 $("copyAddr").onclick=function(){navigator.clipboard&&navigator.clipboard.writeText(me.addr).then(function(){toast("Dirección copiada")})};
+$("goSend").onclick=function(){$("sendCard").scrollIntoView({behavior:"smooth",block:"center"});setTimeout(function(){$("amtIn").focus()},400)};
+$("goChain").onclick=function(){$("chainCard").scrollIntoView({behavior:"smooth",block:"start"})};
 $("sendBtn").onclick=function(){
   var amt=parseFloat($("amtIn").value);$("sendErr").textContent="";
   if(!selected){$("sendErr").textContent="Elige a quién enviar.";return}
-  if(!(amt>0)){$("sendErr").textContent="Escribe una cantidad mayor que cero.";return}
-  var b=this;b.disabled=true;
-  transfer(me,accounts[selected],amt,$("conIn").value.trim()).then(function(){toast("Enviado y confirmado en la cadena");$("amtIn").value="";$("conIn").value=""})
+  if(!(amt>0)){$("sendErr").textContent="Escribe una cantidad.";return}
+  var b=this;b.disabled=true;transfer(me,accounts[selected],amt,$("conIn").value.trim()).then(function(){toast("Pago enviado");$("amtIn").value="";$("conIn").value=""})
   .catch(function(e){$("sendErr").textContent=e.message}).then(function(){b.disabled=false});
 };
 $("reqBtn").onclick=function(){
   var others=Object.keys(accounts).map(function(k){return accounts[k]}).filter(function(a){return a!==me});
-  var from=selected?accounts[selected]:others[0],amt=Math.round((20+Math.random()*180)*100)/100;
-  var conceptos=["Mi parte de la cena","Lo del cine","Pago del libro","Regreso del préstamo"];
-  var b=this;b.disabled=true;
-  transfer(from,me,amt,conceptos[Math.floor(Math.random()*conceptos.length)]).then(function(){toast(from.name+" te envió "+fmt(amt)+" QCC")})
+  var from=selected?accounts[selected]:others[0],amt=Math.round((20+Math.random()*180)*100)/100,cs=["Mi parte de la cena","Lo del cine","Pago del libro","Regreso del préstamo"];
+  var b=this;b.disabled=true;transfer(from,me,amt,cs[Math.floor(Math.random()*cs.length)]).then(function(){toast(from.name+" te envió "+fmt(amt)+" QCC")})
   .catch(function(e){$("sendErr").textContent=e.message}).then(function(){b.disabled=false});
 };
-$("tamperBtn").onclick=function(){
-  if(selBlock===null||selBlock===0)return;
-  if(!backup)backup=JSON.stringify(chain);
-  var t=chain[selBlock].transacciones[0];t.cantidad=Math.round((t.cantidad*10+1)*100)/100;
-  toast("Bloque #"+selBlock+" alterado: la cantidad ahora es "+fmt(t.cantidad)+" QCC");render();
-};
-$("repairBtn").onclick=function(){if(!backup){toast("La cadena no ha sido alterada");return}var orig=JSON.parse(backup);chain=orig.concat(chain.slice(orig.length));backup=null;toast("Cadena restaurada desde la copia");render()};
+$("tamperBtn").onclick=function(){if(selBlock===null||selBlock===0)return;if(!backup)backup=JSON.stringify(chain);
+  var t=chain[selBlock].transacciones[0];t.cantidad=Math.round((t.cantidad*10+1)*100)/100;toast("Bloque #"+selBlock+" alterado");render()};
+$("repairBtn").onclick=function(){if(!backup){toast("La cadena está intacta");return}var o=JSON.parse(backup);chain=o.concat(chain.slice(o.length));backup=null;toast("Cadena restaurada");render()};
 </script>
 </body>
 </html>
