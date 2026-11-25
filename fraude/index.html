@@ -169,15 +169,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .facts{display:flex;gap:22px;flex-wrap:wrap}
 .facts div b{display:block;font-size:20px;font-weight:750;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .facts div span{font-size:11.5px;color:var(--soft)}
-.pipe{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 22px;padding:16px}
-.lane{grid-column:1/-1;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mute);margin-top:4px}
-.node{position:relative;border:1.5px solid var(--line);border-radius:12px;padding:10px 11px;background:#fff}
-.node h5{font-size:12.5px;font-weight:700;display:flex;gap:6px;align-items:center}
-.node h5 code{font-family:var(--mono);font-size:10.5px;color:var(--mute);font-weight:500}
-.node p{font-size:11.5px;color:var(--soft);margin-top:3px;line-height:1.4}
-.node.k{border-color:#f6b8c4;background:#fff8f9}
-.node:not(.last)::after{content:"";position:absolute;right:-17px;top:50%;width:12px;height:2px;background:#d9cfd4}
-.node:not(.last)::before{content:"";position:absolute;right:-18px;top:calc(50% - 4px);border:5px solid transparent;border-left-color:#d9cfd4;border-right:0}
 .tl{padding:16px}
 .tlbar{display:flex;height:34px;font-size:11.5px;font-weight:650;position:relative}
 .tlbar div:first-child{border-radius:9px 0 0 9px}.tlbar div:nth-child(3){border-radius:0 9px 9px 0}
@@ -211,6 +202,53 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .big2 span{font-size:11.5px;color:var(--soft)}
 .txt{font-size:12.5px;color:var(--soft);padding:0 16px 14px;line-height:1.5}
 .txt b{color:var(--ink)}
+.flow{background:#17110f;background:radial-gradient(circle at 1px 1px,rgba(255,255,255,.07) 1px,transparent 0) 0 0/22px 22px,linear-gradient(180deg,#1d1519,#140f12);color:#efe7ea;border:1px solid #2a2025;overflow:hidden}
+.fhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:16px 18px 6px}
+.fhead h2{font-size:16px;letter-spacing:-.01em}
+.fhead p{font-size:12.5px;color:#a89aa1;margin-top:2px}
+.fseg{display:inline-flex;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:3px;gap:2px}
+.fseg button{padding:6px 12px;border-radius:8px;font-size:12.5px;font-weight:650;color:#a89aa1}
+.fseg button[aria-pressed="true"]{background:#efe7ea;color:#17110f}
+.fplay{width:32px;height:32px;border-radius:9px;border:1px solid rgba(255,255,255,.12);display:grid;place-items:center;color:#efe7ea}
+.fplay:hover{background:rgba(255,255,255,.08)}
+.fbody{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:0;align-items:stretch}
+.fcanvas{overflow-x:auto;padding:4px 8px 4px 10px}
+.fcanvas svg{display:block;width:100%;min-width:760px;height:auto}
+.fdet{border-left:1px solid rgba(255,255,255,.08);padding:16px 18px;background:rgba(255,255,255,.025);min-height:100%}
+.fdet .code{font-family:var(--mono);font-size:11px;color:#f48aa0;letter-spacing:.02em}
+.fdet h3{font-size:19px;letter-spacing:-.02em;margin:2px 0 6px}
+.fdet p{font-size:12.8px;color:#c9bcc2;line-height:1.5}
+.fdet .chips{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:14px 0}
+.fdet .chips div{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:8px 10px}
+.fdet .chips b{display:block;font-size:17px;font-weight:750;letter-spacing:-.02em;color:#fff;font-variant-numeric:tabular-nums}
+.fdet .chips span{font-size:11px;color:#a89aa1}
+.fdet .io{font-size:11.5px;color:#a89aa1;display:grid;grid-template-columns:52px 1fr;gap:4px 8px;margin-top:4px}
+.fdet .io b{color:#efe7ea;font-weight:600}
+.fdet .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:12px}
+.fdet .tags span{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(244,63,94,.14);color:#f9a8b8}
+.fdet .file{margin-top:12px;font-family:var(--mono);font-size:11px;color:#8d7f86}
+.fleg{display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding:10px 18px 14px;font-size:11.5px;color:#a89aa1;border-top:1px solid rgba(255,255,255,.06)}
+.fleg span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.fleg .lb::before{background:#a78bfa}.fleg .ls::before{background:#f43f5e}.fleg .lsh::before{background:#fbbf24}
+.fleg .lf::before{border-radius:50%;background:#f43f5e;box-shadow:0 0 8px #f43f5e}
+.fleg .fcount{margin-left:auto;font-family:var(--mono);color:#efe7ea}.fleg .fcount::before{display:none}
+#fSvg .edge{fill:none;stroke:rgba(255,255,255,.13);stroke-width:1.6;transition:stroke .2s,opacity .2s}
+#fSvg .edge.on{stroke:rgba(255,255,255,.45)}
+#fSvg .lane{font-size:11px;font-weight:700;letter-spacing:.12em;fill:#6f6268}
+#fSvg .node{cursor:pointer;transition:opacity .2s}
+#fSvg .node rect.box{fill:#221a1e;stroke-width:1.4;transition:fill .15s}
+#fSvg .node:hover rect.box,#fSvg .node:focus rect.box{fill:#2c2227}
+#fSvg .node.sel rect.box{fill:#33272d}
+#fSvg .node .t{font-size:13px;font-weight:700;fill:#f4eef0}
+#fSvg .node .c{font-size:10.5px;fill:#8d7f86;font-family:ui-monospace,Menlo,monospace}
+#fSvg .node .halo{fill:none;stroke-width:2;opacity:0}
+#fSvg .node.sel .halo{opacity:1}
+#fSvg .node.pulse rect.box{animation:npulse .6s ease}
+@keyframes npulse{30%{fill:#3a2b32}}
+#fSvg .dim{opacity:.18}
+#fSvg .dot{pointer-events:none}
+@media (max-width:1000px){.fbody{grid-template-columns:1fr}.fdet{border-left:0;border-top:1px solid rgba(255,255,255,.08)}}
+@media (max-width:760px){.fhead{padding:14px 14px 4px}.fhead .sp{display:none}.fseg{flex:1;display:grid;grid-template-columns:repeat(3,1fr)}.fcanvas svg{min-width:820px}.fcanvas{padding-bottom:8px}.fleg .fcount{margin-left:0;width:100%}.fseg button{padding:6px 4px;font-size:12px}.fcanvas::after{content:"Desliza para ver todo el pipeline";display:block;position:sticky;left:0;width:max-content;font-size:11px;color:#8d7f86;padding:2px 4px 0}}
 @media (max-width:760px){
   .bar .in{padding:0 12px;gap:8px}.sub,.status{display:none}.back span{display:none}
   .views button{padding:6px 10px}
@@ -232,8 +270,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   .feed,.queue,.det{height:auto;max-height:64vh}.det{overflow:visible;max-height:none}
   .thead,.row{grid-template-columns:38px 20px minmax(0,1fr) 58px 70px;gap:6px}
   .cmp{grid-template-columns:1fr}
-  .pipe{grid-template-columns:1fr 1fr;gap:8px 18px}.node:nth-child(odd of .node)::after,.node:nth-child(odd of .node)::before{display:none}
-  .node::after,.node::before{display:none}
   .hbar{grid-template-columns:110px minmax(0,1fr) 48px}
   .q .pop,.pop{left:auto;right:-8px;width:min(270px,calc(100vw - 40px))}
   .tlmark span{transform:translateX(-80%)}.tlx{font-size:10.5px}.tlx div{padding:0 2px}
@@ -301,19 +337,19 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <div class="facts"><div><b>590,540</b><span>transacciones</span></div><div><b>3.5%</b><span>fraude</span></div><div><b>0.558</b><span>PR-AUC en prueba</span></div><div><b>0</b><span>diferencia batch vs streaming</span></div></div>
     </section>
 
-    <section class="card w12"><div class="ch"><h2>Pipeline</h2><small>11 pasos · Spark, Delta Lake, Kafka, PostgreSQL</small></div>
-      <div class="pipe">
-        <div class="lane">Batch · lakehouse</div>
-        <div class="node"><h5>Bronze <code>01</code></h5><p>CSV de Kaggle a Delta, tal cual, con metadatos de ingesta.</p></div>
-        <div class="node"><h5>Silver <code>02</code></h5><p>Une transacción e identidad, quita duplicados y registra pruebas de calidad.</p></div>
-        <div class="node"><h5>Gold <code>03</code></h5><p>Atributos en el punto del tiempo: ventanas de Spark que solo miran el pasado.</p></div>
-        <div class="node last"><h5>Modelos <code>04–06</code></h5><p>Grafo cliente–dispositivo, GBT y logística en MLlib, regla de Bayes y colas.</p></div>
-        <div class="lane">Tiempo real</div>
-        <div class="node k"><h5>Kafka <code>07</code></h5><p>Publica el mes de prueba sin la etiqueta de fraude.</p></div>
-        <div class="node k"><h5>Streaming <code>08</code></h5><p>Spark Structured Streaming por micro-lotes, con el mismo features.py.</p></div>
-        <div class="node k"><h5>Paridad <code>09</code></h5><p>Prueba automática: batch y streaming deben dar la misma probabilidad.</p></div>
-        <div class="node k last"><h5>Alertas <code>10–11</code></h5><p>Delta y PostgreSQL, warehouse en estrella, explicación y casos parecidos.</p></div>
-      </div></section>
+    <section class="card w12 flow" id="flow">
+      <div class="fhead">
+        <div><h2>Pipeline</h2><p>11 pasos en Spark, Delta Lake, Kafka y PostgreSQL. Toca un nodo para ver qué hace y sus cifras.</p></div>
+        <div class="sp"></div>
+        <div class="fseg" role="group" aria-label="Recorrido"><button data-m="all" aria-pressed="true">Todo</button><button data-m="b" aria-pressed="false">Batch</button><button data-m="s" aria-pressed="false">Tiempo real</button></div>
+        <button class="fplay" id="fPlay" aria-label="Pausar flujo"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
+      </div>
+      <div class="fbody">
+        <div class="fcanvas"><svg id="fSvg" viewBox="0 0 1060 400" role="img" aria-label="Diagrama del pipeline"></svg></div>
+        <aside class="fdet" id="fDet" aria-live="polite"></aside>
+      </div>
+      <div class="fleg"><span class="lb">Batch · lakehouse</span><span class="ls">Tiempo real</span><span class="lsh">Compartido</span><span class="lf">Transacción marcada como alerta</span><span class="fcount" id="fCount"></span></div>
+    </section>
 
     <section class="card w12"><div class="ch"><h2>Partición temporal</h2><button class="q" data-pop="Con partición aleatoria el PR-AUC sube a 0.85, pero es falso: el 84% de los fraudes de prueba vienen de clientes que ya defraudaron en entrenamiento.">?</button><small>se entrena con el pasado y se evalúa con el futuro</small></div>
       <div class="tl"><div class="tlbar">
@@ -394,7 +430,7 @@ var wasPlaying=false;
 function view(v){var inn=v==="in";$("vC").setAttribute("aria-selected",String(!inn));$("vI").setAttribute("aria-selected",String(inn));
   $("consola").classList.toggle("hidden",inn);$("dentro").classList.toggle("hidden",!inn);
   if(inn){wasPlaying=playing;setPlay(false)}else if(wasPlaying)setPlay(true);
-  history.replaceState(null,"",inn?"#por-dentro":location.pathname);window.scrollTo(0,0)}
+  history.replaceState(null,"",inn?"#por-dentro":location.pathname);window.scrollTo(0,0);if(inn&&window.fCenter)setTimeout(window.fCenter,50)}
 $("vC").onclick=$("toC").onclick=function(){view("c")};$("vI").onclick=$("toIn").onclick=function(){view("in")};
 
 /* consola */
@@ -469,6 +505,83 @@ $("wk").innerHTML=SEM.map(function(s){return'<div style="height:'+(s[1]/.5*100)+
 $("wkx").innerHTML=SEM.map(function(s){return"<span>s"+s[0]+"</span>"}).join("");
 var STAFF=[[5.27,2],[3.88,2],[4.33,2],[3.52,2],[2.70,1],[1.52,1],[1.24,1],[1.21,1],[.61,1],[.97,1],[.70,1],[1.58,1],[3.24,2],[5.27,2],[4.42,2],[6.79,2],[7.70,2],[7.88,2],[6.67,2],[6.97,2],[8.21,3],[6.97,2],[6.79,2],[5.39,2]];
 $("staff").innerHTML=STAFF.map(function(s,i){return'<div title="'+i+' h: '+s[0].toFixed(1)+' alertas, '+s[1]+' analista'+(s[1]>1?'s':'')+'" style="justify-content:flex-end;align-items:center"><span style="font-size:10px;font-weight:700;margin-bottom:3px">'+s[1]+'</span><i style="height:'+(s[0]/8.21*80)+'%;width:100%;background:'+['','#f6b8c4','#f43f5e','#9f1239'][s[1]]+'"></i></div>'}).join("");
+
+/* pipeline interactivo */
+(function(){
+var NS="http://www.w3.org/2000/svg",svg=$("fSvg"),W=136,H=50;
+var COL={b:"#a78bfa",s:"#f43f5e",sh:"#fbbf24",src:"#8d7f86"};
+var N={
+ kaggle:{x:80,y:110,l:"b",t:"CSV Kaggle",c:"fuente",h:"Datos de origen",d:"Transacciones e identidad de IEEE-CIS (Vesta): pagos reales con la etiqueta de fraude, anonimizados.",k:[["590,540","transacciones"],["3.5%","fraude"]],i:"Kaggle (kagglehub)",o:"01 Bronze",tg:["CSV","IEEE-CIS"],f:"datos/ieee-cis/"},
+ bronze:{x:240,y:110,l:"b",t:"Bronze",c:"01",h:"Bronze",d:"Copia el CSV a Delta tal cual, con metadatos de ingesta. Nada se limpia aquí: si algo sale mal después, se puede reconstruir desde este punto.",k:[["590,540","filas"],["Delta","formato"]],i:"CSV Kaggle",o:"02 Silver",tg:["Delta Lake","Spark"],f:"pasos/01_bronze.py"},
+ silver:{x:400,y:110,l:"b",t:"Silver",c:"02",h:"Silver",d:"Une transacción e identidad, corrige tipos, quita duplicados y registra pruebas de calidad en una tabla Delta. Aquí se hace la partición temporal.",k:[["410,601","entreno"],["85,304","validación"],["94,635","prueba"],["3","particiones"]],i:"01 Bronze",o:"03 Gold",tg:["Delta Lake","Calidad de datos"],f:"pasos/02_silver.py"},
+ gold:{x:560,y:110,l:"b",t:"Gold",c:"03",h:"Gold",d:"Calcula atributos en el punto del tiempo con ventanas de Spark que solo miran el pasado. Las etiquetas de fraude entran con 30 días de retraso, como un contracargo real.",k:[["0","etiquetas de prueba visibles"],["30 días","retraso de etiqueta"]],i:"02 Silver",o:"04 Grafo, 05 Modelos",tg:["Spark","Ventanas"],f:"pasos/03_gold.py"},
+ grafo:{x:720,y:46,l:"b",t:"Grafo",c:"04",h:"Grafo cliente–dispositivo",d:"Grafo bipartito con componentes conexas y un modelo nulo. Busca anillos: grupos de clientes que comparten dispositivo y fraude.",k:[["219","anillos observados"],["74","esperados al azar"],["13.0%","fraude en anillos"],["6.0%","fraude base"]],i:"03 Gold",o:"05 Modelos",tg:["Matemáticas discretas"],f:"pasos/04_grafo.py"},
+ modelos:{x:740,y:150,l:"b",t:"Modelos",c:"05",h:"Modelos",d:"GBT y regresión logística en Spark MLlib, con ablación y calibración de Platt. El modelo y el umbral se eligen solo con validación.",k:[["0.558","PR-AUC prueba"],["0.922","ROC-AUC"],["53.6%","recall al 3.35%"],["Logística","ganador"]],i:"03 Gold, 04 Grafo",o:"06 Decisión, 08 Streaming",tg:["Spark MLlib","Calibración"],f:"pasos/05_modelos.py"},
+ decision:{x:920,y:110,l:"b",t:"Decisión",c:"06",h:"Modelos de decisión",d:"Regla de Bayes, mochila con capacidad fija y colas M/M/c con simulación Monte Carlo: cuánto revisar, en qué orden y con cuántos analistas.",k:[["63%","dinero con pérdida esperada"],["42%","con probabilidad"],["3","analistas al pico"],["104","alertas al día"]],i:"05 Modelos",o:"Umbral y plantilla",tg:["Estocásticos","Erlang C"],f:"pasos/06_decision.py"},
+ feat:{x:560,y:215,l:"sh",t:"features.py",c:"compartido",h:"Un solo módulo de atributos",d:"El proyecto original calculaba los atributos de dos formas. Ahora batch y streaming importan el mismo archivo, así que no pueden diferir.",k:[["0","diferencia máxima"],["100%","decisiones iguales"]],i:"Usado por 03 y 08",o:"Atributos idénticos",tg:["Paridad","Python"],f:"src/features.py"},
+ kafka:{x:240,y:320,l:"s",t:"Kafka",c:"07",h:"Productor Kafka",d:"Publica el mes de prueba en el tópico transacciones, sin la etiqueta de fraude: el consumidor no puede ver la respuesta.",k:[["94,635","eventos"],["sin etiqueta","isFraud"]],i:"Mes de prueba",o:"08 Streaming",tg:["Kafka"],f:"pasos/07_productor_kafka.py"},
+ stream:{x:400,y:320,l:"s",t:"Streaming",c:"08",h:"Consumidor en streaming",d:"Spark Structured Streaming lee Kafka por micro-lotes, calcula atributos con features.py, puntúa con el modelo elegido y escribe las alertas.",k:[["5","micro-lotes"],["3,426","alertas"],["3.6%","tasa de alerta"],["33.7%","precisión"]],i:"07 Kafka, features.py, 05 Modelos",o:"Alertas, 09 Paridad",tg:["Structured Streaming","Spark"],f:"pasos/08_consumidor_streaming.py"},
+ paridad:{x:560,y:370,l:"s",t:"Paridad",c:"09",h:"Prueba de paridad",d:"Compara cada probabilidad de streaming contra la de batch. Si difieren, el despliegue tiene una fuga o un atributo distinto.",k:[["94,635","comparadas"],["0.0","diferencia máxima"]],i:"08 Streaming y batch",o:"Prueba automática",tg:["Calidad","Pruebas"],f:"pasos/09_paridad.py"},
+ alertas:{x:720,y:320,l:"s",t:"Alertas",c:"Delta + PG",h:"Alertas",d:"Cada alerta se guarda en Delta y en PostgreSQL (operacion.alertas), lista para la cola del analista que ves en la consola.",k:[["3,426","alertas"],["1,156","eran fraude"],["35.2%","recall"],["33.7%","precisión"]],i:"08 Streaming",o:"10 Warehouse, 11 Cognitivo",tg:["PostgreSQL","Delta Lake"],f:"operacion.alertas"},
+ dw:{x:920,y:270,l:"s",t:"Warehouse",c:"10",h:"Data warehouse",d:"Esquema estrella en PostgreSQL con consultas OLAP (ROLLUP, GROUPING SETS, ventanas). Desde aquí se vigila cómo se degrada el modelo semana a semana.",k:[["590,540","filas en la tabla de hechos"],["5","dimensiones"],["12–13%","fraude en C y H"],["2%","fraude en W"]],i:"Alertas",o:"Consultas y tableros",tg:["PostgreSQL","OLAP"],f:"pasos/10_data_warehouse.py"},
+ cog:{x:920,y:370,l:"s",t:"Cognitivo",c:"11",h:"Cómputo cognitivo",d:"Agrega a cada alerta una explicación en español, los 7 casos resueltos más parecidos (k-NN) y una acción sugerida por reglas de experto.",k:[["86%","fraude en 'Bloquear'"],["61%","en 'Revisar ya'"],["13%","en cola normal"],["7","casos parecidos"]],i:"Alertas",o:"Consola del analista",tg:["k-NN","Reglas de experto"],f:"pasos/11_cognitivo.py"}
+};
+var E=[["kaggle","bronze","b"],["bronze","silver","b"],["silver","gold","b"],["gold","grafo","b"],["gold","modelos","b"],["grafo","modelos","b"],["modelos","decision","b"],
+ ["gold","feat","sh"],["feat","stream","sh"],["modelos","stream","m"],["kafka","stream","s"],["stream","alertas","s"],["stream","paridad","s"],["alertas","dw","s"],["alertas","cog","s"]];
+function el(t,a,p){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e}
+function path(a,b){var A=N[a],B=N[b],x1,y1,x2,y2;
+  if(Math.abs(A.y-B.y)<30||B.x-A.x>100){x1=A.x+W/2;y1=A.y;x2=B.x-W/2;y2=B.y;var dx=(x2-x1)/2;return"M"+x1+" "+y1+" C"+(x1+dx)+" "+y1+" "+(x2-dx)+" "+y2+" "+x2+" "+y2}
+  x1=A.x;y1=A.y+(B.y>A.y?H/2:-H/2);x2=B.x;y2=B.y+(B.y>A.y?-H/2:H/2);var dy=(y2-y1)/2;return"M"+x1+" "+y1+" C"+x1+" "+(y1+dy)+" "+x2+" "+(y2-dy)+" "+x2+" "+y2}
+el("text",{x:14,y:24,"class":"lane"}).textContent="BATCH · LAKEHOUSE";
+el("text",{x:14,y:262,"class":"lane"}).textContent="TIEMPO REAL";
+el("line",{x1:14,x2:1046,y1:242,y2:242,stroke:"rgba(255,255,255,.06)","stroke-dasharray":"4 6"});
+var gE=el("g",{}),gD=el("g",{}),gN=el("g",{});
+E.forEach(function(e){e.p=el("path",{d:path(e[0],e[1]),"class":"edge"},gE);e.len=e.p.getTotalLength();if(e[2]==="m"){e.p.setAttribute("stroke-dasharray","5 5")}});
+Object.keys(N).forEach(function(id){var n=N[id],g=el("g",{"class":"node",tabindex:"0",role:"button","aria-label":n.h},gN);n.g=g;
+  el("rect",{x:n.x-W/2-4,y:n.y-H/2-4,width:W+8,height:H+8,rx:15,"class":"halo",stroke:COL[n.l]},g);
+  el("rect",{x:n.x-W/2,y:n.y-H/2,width:W,height:H,rx:12,"class":"box",stroke:COL[n.l]},g);
+  el("rect",{x:n.x-W/2+10,y:n.y-6,width:4,height:12,rx:2,fill:COL[n.l]},g);
+  var t=el("text",{x:n.x-W/2+22,y:n.y-2,"class":"t"},g);t.textContent=n.t;
+  var c=el("text",{x:n.x-W/2+22,y:n.y+13,"class":"c"},g);c.textContent=n.c;
+  g.onclick=function(){pick(id)};g.onkeydown=function(ev){if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();pick(id)}};
+  g.onmouseenter=function(){hl(id)};g.onmouseleave=function(){hl(sel)}});
+var sel="stream",mode="all",run=true,seen=0,flagged=0;
+function hl(id){E.forEach(function(e){e.p.classList.toggle("on",e[0]===id||e[1]===id)})}
+function inMode(l){return mode==="all"||(mode==="b"?(l==="b"||l==="sh"||l==="src"):(l==="s"||l==="sh"||l==="m"))}
+function pick(id){sel=id;var n=N[id];Object.keys(N).forEach(function(k){N[k].g.classList.toggle("sel",k===id)});hl(id);
+  $("fDet").innerHTML='<div class="code">'+(/^\d/.test(n.c)?"PASO "+n.c:n.c.toUpperCase())+'</div><h3>'+n.h+'</h3><p>'+n.d+'</p>'+
+  '<div class="chips">'+n.k.map(function(k){return'<div><b>'+k[0]+'</b><span>'+k[1]+'</span></div>'}).join("")+'</div>'+
+  '<div class="io"><span>entra</span><b>'+n.i+'</b><span>sale</span><b>'+n.o+'</b></div>'+
+  '<div class="tags">'+n.tg.map(function(x){return"<span>"+x+"</span>"}).join("")+'</div><div class="file">'+n.f+'</div>';
+  var cv=document.querySelector(".fcanvas");if(cv&&cv.scrollWidth>cv.clientWidth+4)cv.scrollTo({left:n.x/1060*cv.scrollWidth-cv.clientWidth/2,behavior:"smooth"})}
+function setMode(m){mode=m;document.querySelectorAll(".fseg button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.m===m))});
+  Object.keys(N).forEach(function(k){N[k].g.classList.toggle("dim",!inMode(N[k].l))});
+  E.forEach(function(e){e.p.classList.toggle("dim",!inMode(e[2]))});
+  if(!inMode(N[sel].l))pick(m==="b"?"modelos":"stream")}
+document.querySelectorAll(".fseg button").forEach(function(b){b.onclick=function(){setMode(b.dataset.m)}});
+$("fPlay").onclick=function(){run=!run;this.setAttribute("aria-label",run?"Pausar flujo":"Reanudar flujo");
+  this.innerHTML=run?'<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>':'<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>'};
+/* partículas: viajan por cada arista; en streaming, ~3.6% salen del consumidor como alerta */
+var dots=[],last=0,acc={};
+function spawn(e,fraud){var c=el("circle",{r:fraud?4:2.6,"class":"dot",fill:fraud?"#f43f5e":COL[e[2]==="m"?"b":e[2]],opacity:.95},gD);if(fraud)c.setAttribute("style","filter:drop-shadow(0 0 5px #f43f5e)");dots.push({e:e,c:c,t:0,f:fraud})}
+var RATE={b:1.1,sh:.6,m:.25,s:2.2};
+function tick(now){var dt=Math.min(.05,(now-(last||now))/1000);last=now;
+  if(run&&!document.hidden&&!$("dentro").classList.contains("hidden")){
+    E.forEach(function(e,i){if(!inMode(e[2]))return;var src=e[0];
+      if(src==="kaggle"||src==="kafka"||e[2]==="m"||src==="gold"&&e[1]==="feat"){acc[i]=(acc[i]||0)+dt*RATE[e[2]];if(acc[i]>=1){acc[i]=0;spawn(e,false)}}});
+    for(var j=dots.length-1;j>=0;j--){var d=dots[j],sp=d.e[2]==="s"?.55:.42;d.t+=dt*sp*(240/Math.max(120,d.e.len));
+      if(d.t>=1){var to=d.e[1];d.c.remove();dots.splice(j,1);N[to].g.classList.remove("pulse");void N[to].g.getBBox();N[to].g.classList.add("pulse");
+        var outs=E.filter(function(x){return x[0]===to&&inMode(x[2])});
+        if(to==="stream"&&d.e[0]==="kafka"){seen++;var f=Math.random()<.036;if(f)flagged++;$("fCount").textContent=seen.toLocaleString("es-MX")+" eventos · "+flagged+(flagged===1?" alerta":" alertas");
+          outs.forEach(function(x){if(x[1]==="alertas"){if(f)spawn(x,true)}else if(Math.random()<.35)spawn(x,false)})}
+        else if(to==="alertas"||to==="feat"||to==="modelos"&&d.e[0]!=="grafo"||to==="silver"||to==="bronze"||to==="gold"&&Math.random()<.8){outs.forEach(function(x){if(x[2]==="m")return;if(x[0]==="gold"&&x[1]==="feat")return;if(x[1]==="grafo"&&Math.random()<.6)return;spawn(x,d.f)})}
+        else if(to==="grafo"){outs.forEach(function(x){spawn(x,false)})}
+        continue}
+      var pt=d.e.p.getPointAtLength(d.t*d.e.len);d.c.setAttribute("cx",pt.x);d.c.setAttribute("cy",pt.y)}}
+  requestAnimationFrame(tick)}
+pick("stream");window.fCenter=function(){pick(sel)};
+if(!matchMedia("(prefers-reduced-motion: reduce)").matches)requestAnimationFrame(tick);
+})();
 
 drawCtl();recompute();setPlay(false);requestAnimationFrame(step);
 if(location.hash==="#por-dentro")view("in");
