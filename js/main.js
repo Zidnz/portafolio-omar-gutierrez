@@ -72,19 +72,19 @@ var P=[
 
 {id:'qchaucoin',n:'04',c:K.amber,cs:'rgba(176,125,34,.15)',kick:'Fintech · 2025',title:'QchauCoin, una stablecoin simulada',
  sub:'Una moneda estable mexicana de laboratorio: blockchain propia, monedero web y tres análisis cuantitativos de su estabilidad.',
- chips:['Proyecto académico','Node.js + Express','MongoDB','RSA 2048 + JWT','Keras','R'],cover:'q-red',
+ chips:['Proyecto académico','Node.js + Express','MongoDB','RSA 2048 + JWT','Keras','R'],cover:'q-sim-cover',app:'qchaucoin/',
  tldr:['Una moneda estable solo sirve si es segura y si vuelve a su precio objetivo después de un susto. ¿Cómo se construye eso y de qué depende?',
        'Programamos la cadena de bloques, las firmas y el monedero, y estudiamos la estabilidad con estadística multivariada, una red neuronal y una ecuación diferencial.',
        'Un sistema completo de punta a punta, del registro del usuario al bloque minado, más un modelo que muestra cuánto tarda el precio en recuperarse.'],
  kpis:[['SHA-256','encadena cada bloque con el anterior'],['RSA 2048','firma de cada transacción'],['7→16→8→1','red neuronal que clasifica riesgo'],['180','días de precio simulados']],
  steps:[
-  ['Identidad','Registro y llaves','Al registrarse, el usuario recibe un par de llaves RSA de 2048 bits. La privada se entrega una sola vez y no se guarda en el servidor. Contraseñas con bcrypt y sesiones con JWT.',null,'q-main'],
-  ['Firma','Cada pago va firmado','Para enviar monedas, el usuario firma la transacción con su llave privada. El servidor verifica la firma con la llave pública antes de tocar cualquier saldo.',null,'q-tx'],
-  ['Bloques','La cadena','Cada bloque guarda su índice, sus transacciones, el hash del bloque anterior y su propio hash SHA-256. Cambiar un bloque viejo rompe todos los que siguen.','Débito, crédito y minado del bloque ocurren en una sola transacción atómica de MongoDB: o pasa todo o no pasa nada.',null],
+  ['Identidad','Registro y llaves','Al registrarse, el usuario recibe un par de llaves RSA de 2048 bits. La privada se entrega una sola vez y no se guarda en el servidor. Contraseñas con bcrypt y sesiones con JWT.',null,'q-sim-llave'],
+  ['Firma','Cada pago va firmado','Para enviar monedas, el usuario firma la transacción con su llave privada. El servidor verifica la firma con la llave pública antes de tocar cualquier saldo.',null,'q-sim-firma'],
+  ['Bloques','La cadena','Cada bloque guarda su índice, sus transacciones, el hash del bloque anterior y su propio hash SHA-256. Cambiar un bloque viejo rompe todos los que siguen.','Débito, crédito y minado del bloque ocurren en una sola transacción atómica de MongoDB: o pasa todo o no pasa nada.','q-sim-cadena'],
   ['Estadística','¿Qué distingue a una moneda estable?','En R: matriz de correlación, PCA y k-means sobre variables financieras de stablecoins. El respaldo en dinero fiat se asocia con menor volatilidad (−0.91) y la volatilidad con mayor riesgo (0.87).',null,'q-heat'],
   ['Red neuronal','Clasificador de riesgo','Una red densa en Keras con 7 entradas financieras, dos capas ocultas de 16 y 8 neuronas y una salida que estima la probabilidad de riesgo alto.',null,'q-red'],
   ['Dinámica','El precio como ecuación diferencial','dP/dt = α(R − P) + βD(t) − γI(t). El respaldo jala el precio hacia su objetivo R, la demanda lo empuja y la inflación lo erosiona. Resuelta por el método de Euler para 180 días.',null,'q-disp']],
- gal:[['q-main','Imagen del proyecto'],['q-tx','Concepto del monedero: enviar y recibir'],['q-red','Arquitectura de la red neuronal de riesgo'],['q-heat','Correlaciones entre variables financieras'],['q-radar','Perfil de QchauCoin'],['q-disp','Volatilidad contra liquidez por stablecoin']],
+ gal:[['q-sim-wallet','Wallet simulada: saldo, contactos y envío firmado'],['q-sim-firma','Cada pago: firma RSA, verificación y bloque nuevo'],['q-sim-cadena','Cadena alterada: el hash ya no coincide y el enlace se rompe'],['q-sim-llave','La llave privada se muestra una sola vez'],['q-red','Arquitectura de la red neuronal de riesgo'],['q-heat','Correlaciones entre variables financieras'],['q-radar','Perfil de QchauCoin'],['q-disp','Volatilidad contra liquidez por stablecoin']],
  lim:'Es un proyecto académico, no una moneda: no mueve dinero real. La red neuronal se entrenó con variables simuladas y normalizadas, así que su valor está en el flujo de trabajo y no en sus predicciones. La cadena no tiene prueba de trabajo ni red de nodos; es una sola cadena en un servidor.',
  repo:['https://github.com/Zidnz/Moneda-Digital-','github.com/Zidnz/Moneda-Digital-'],sim:'qchau',simT:'Simuladores: rompe la cadena y aguanta el pánico',simH:'Dos experimentos. Arriba, una cadena de bloques en miniatura: envía transacciones y luego altera una vieja. Abajo, el modelo de precio del proyecto con un pánico en el día 60.'}
 ];
@@ -183,7 +183,7 @@ P.forEach(function(p){var x=X[p.id];
   r.appendChild(el('div','tldr',['Jefe final: el problema','Estrategia: lo que hicimos','Botín: el resultado'].map(function(t,i){return '<div class="tl"><h4>'+t+'</h4><p>'+p.tldr[i]+'</p></div>'}).join('')));
   r.appendChild(el('h3','sec','Logros'));
   r.appendChild(el('div','kpis',p.kpis.map(function(k){return '<div class="kpi"><b class="num">'+k[0]+'</b><small>'+k[1]+'</small></div>'}).join('')));
-  r.appendChild(el('div','foot3','<div class="lim"><h4>Puntos débiles, dicho sin rodeos</h4><p>'+p.lim+'</p></div><div class="meta"><h4>Código</h4><p>Todo el código, los notebooks y la documentación están en el repositorio.</p><p style="margin-top:8px"><a href="'+p.repo[0]+'" target="_blank" rel="noopener noreferrer">'+p.repo[1]+'</a></p></div>'));
+  r.appendChild(el('div','foot3','<div class="lim"><h4>Puntos débiles, dicho sin rodeos</h4><p>'+p.lim+'</p></div><div class="meta"><h4>Código</h4><p>Todo el código, los notebooks y la documentación están en el repositorio.</p><p style="margin-top:8px"><a href="'+p.repo[0]+'" target="_blank" rel="noopener noreferrer">'+p.repo[1]+'</a></p>'+(p.app?'<p style="margin-top:8px"><a href="'+p.app+'" target="_blank" rel="noopener">'+T('Abrir la wallet simulada ↗')+'</a></p>':'')+'</div>'));
   var nx=el('div','cta');nx.innerHTML='<button class="pill go" type="button">Siguiente: recorrido →</button>';nx.firstChild.onclick=function(){open('rec')};r.appendChild(nx);
 
   /* 2 recorrido */
@@ -303,7 +303,7 @@ var ICO_MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 function renderOpts(){$('opts').innerHTML='<div class="lang" role="group" aria-label="Idioma"><button type="button" data-set-lang="es" aria-pressed="'+(LANG==='es')+'">ES</button><button type="button" data-set-lang="en" aria-pressed="'+(LANG==='en')+'">EN</button></div><button type="button" class="mode" data-toggle-mode="1" aria-label="'+(MODE==='dark'?'Cambiar a modo claro':'Cambiar a modo oscuro')+'" title="'+(MODE==='dark'?'Modo claro':'Modo oscuro')+'">'+(MODE==='dark'?ICO_SUN:ICO_MOON)+'<span>'+(MODE==='dark'?'Claro':'Oscuro')+'</span></button>'}
 function infoGrid(){
  var HOW=[['flag','Entender el problema','Antes de tocar datos: qué decisión hay que tomar y quién la toma.'],['db','Limpiar y explorar','Duplicados, etapas, monedas y patrones raros salen a la luz.'],['tree','Modelar y poner a prueba','Evaluar con el futuro, comparar contra una regla simple, desconfiar de lo perfecto.'],['chart','Explicar y decidir','Un tablero o una cola de trabajo que alguien pueda usar mañana.']],
-  NUM=[['590,540','transacciones reales analizadas'],['115','pruebas automáticas en un proyecto'],['4','proyectos de punta a punta'],['1 año','como Junior Data Analyst en Veolia']],
+  NUM=[['590,540','transacciones reales analizadas'],['115','pruebas automáticas en un proyecto'],['4','proyectos de punta a punta'],['Desde 2025','Data Analyst Intern en Veolia']],
   RUL=[['Si el resultado es perfecto, sospecha.','Un recall del 100% casi siempre esconde una fuga de información.'],['Evalúa con el futuro, no con el azar.','Partir los datos por tiempo evita resultados demasiado optimistas.'],['Una regla simple también es un modelo.','Si no supera a la regla, el modelo no se ha ganado su lugar.']];
  return '<div class="hpa-grid">'+
  '<div><h3>Cómo trabajo</h3><ol class="how">'+HOW.map(function(h,i){return '<li style="--k:'+i+'"><span class="hi">'+ic(h[0])+'</span><div><b>'+h[1]+'</b><small>'+h[2]+'</small></div></li>'}).join('')+'</ol></div>'+
@@ -322,7 +322,7 @@ function linkBtns(){return '<a class="btn" target="_blank" rel="noopener norefer
 function heroHTML(){var tk='Ahora corriendo: lakehouse de fraude en Spark ♪ · · · batch = streaming ✓ · · · ETo del día: 7.1 mm · · · regla de 40 h contra modelos: sin ganador claro · · · QchauCoin = 1.00 · · · gracias por visitar ✦ · · · ';
  return '<div class="h-hero"><div class="wrap hj">'+
  '<aside class="rail"><b>UNRC</b><small>7.º SEM</small>'+artDie('')+'<a href="'+PLAN_URL+'" target="_blank" rel="noopener noreferrer" title="Plan de estudios de la UNRC (PDF)" aria-label="Plan de estudios de la UNRC">'+ICO_CAP+'</a><hr><a href="'+GH+'" target="_blank" rel="noopener noreferrer" title="GitHub" aria-label="GitHub">'+ICO_GH+'</a><a href="'+LI+'" target="_blank" rel="noopener noreferrer" title="LinkedIn" aria-label="LinkedIn">'+ICO_IN+'</a></aside>'+
- '<div class="hj-t"><p class="tagp">OMAR GUTIÉRREZ ESCOTO</p><h1>Datos que<br>toman<br>decisiones</h1><p class="lede">Estudiante de Ciencia de Datos para el Negocio en la UNRC y Junior Data Analyst en Veolia. Busco la historia escondida en los datos, la pruebo con rigor y la cuento para que cualquiera la entienda.</p>'+
+ '<div class="hj-t"><p class="tagp">OMAR GUTIÉRREZ ESCOTO</p><h1>Datos que<br>toman<br>decisiones</h1><p class="lede">Estudiante de Ciencia de Datos para el Negocio en la UNRC y Data Analyst Intern en Veolia. Busco la historia escondida en los datos, la pruebo con rigor y la cuento para que cualquiera la entienda.</p>'+
  '<div class="cta"><button class="btn" type="button" data-scroll="levels-h">Ver misiones ›</button><a class="btn ghost" href="'+GH+'" target="_blank" rel="noopener noreferrer">'+ICO_GH+'GitHub</a></div>'+cvRow()+'</div>'+
  heroScene()+'</div>'+
  '<div class="wrap"><div class="ticker">'+artRadio()+'<div class="tk"><div class="tk-in"><span>'+tk+'</span><span>'+tk+'</span></div></div><span class="eq"><i></i><i></i><i></i><i></i></span></div></div></div>'+
