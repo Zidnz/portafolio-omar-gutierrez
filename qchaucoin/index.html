@@ -22,28 +22,30 @@
 <meta name="theme-color" content="#00a896">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2300BFA6'/%3E%3Ctext x='16' y='22.5' font-size='17' font-family='Arial' font-weight='800' text-anchor='middle' fill='white'%3EQ%3C/text%3E%3C/svg%3E">
 <style>
-:root{--bg:#f3f6f7;--surface:#fff;--ink:#0f1f24;--soft:#5b6b70;--mute:#93a1a5;--line:#e6ecee;
+:root{--okc:#00897b;--bg:#f3f6f7;--surface:#fff;--ink:#0f1f24;--soft:#5b6b70;--mute:#93a1a5;--line:#e6ecee;
 --brand:#00BFA6;--brand2:#00897b;--brandbg:#e6f8f5;--red:#e5484d;--redbg:#fdecec;--amber:#c2790a;--ambg:#fff4e0;
 --grad:linear-gradient(135deg,#00c9ad 0%,#00a3a8 45%,#2563eb 120%);--sh:0 1px 2px rgba(16,40,46,.05),0 8px 24px -12px rgba(16,40,46,.18);--r:22px;
 --mono:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",Menlo,Consolas,monospace}
 *{box-sizing:border-box;margin:0;padding:0}
+.bar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar .in{max-width:1120px;margin:0 auto;padding:0 20px;height:56px;display:flex;align-items:center;gap:14px}
+.name{font-weight:700;font-size:15.5px;letter-spacing:-.01em;white-space:nowrap}
+.sub{font-size:13px;color:var(--mute);padding-left:14px;border-left:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp{flex:1}
+.status{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--soft);white-space:nowrap}
+.status::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--okc)}
+.status.bad{color:var(--red)}.status.bad::before{background:var(--red)}
+.status.off::before{background:var(--mute)}
+.back{font-size:13px;font-weight:600;color:var(--ink);text-decoration:none;padding:7px 12px;border-radius:9px;border:1px solid var(--line);white-space:nowrap}
+.back:hover{background:var(--bg)}
+@media (max-width:600px){.sub{display:none}.back span{display:none}}
+
 body{font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;min-height:100vh;-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 input{font:inherit;color:inherit}
 :focus-visible{outline:2.5px solid var(--brand);outline-offset:2px;border-radius:10px}
 .mono{font-family:var(--mono)}
 .hidden{display:none!important}
-.bar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.82);backdrop-filter:saturate(1.6) blur(14px);border-bottom:1px solid var(--line)}
-.bar .in{max-width:1120px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:12px}
-.logo{display:flex;align-items:center;gap:10px;font-weight:750;font-size:17px;letter-spacing:-.01em}
-.logo i{width:32px;height:32px;border-radius:10px;background:var(--grad);display:grid;place-items:center;color:#fff;font-style:normal;font-weight:800}
-.demo{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--ambg);color:var(--amber)}
-.sp{flex:1}
-.chip{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;font-size:13px;font-weight:600;padding:7px 12px;border-radius:999px;background:var(--brandbg);color:var(--brand2)}
-.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
-.chip.bad{background:var(--redbg);color:var(--red)}
-.icon-btn{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;color:var(--soft);border:1px solid var(--line);background:#fff;text-decoration:none;font-size:15px}
-.icon-btn:hover{color:var(--ink)}
 .wrap{max-width:1120px;margin:0 auto;padding:22px 20px 60px}
 .hero{background:var(--grad);border-radius:28px;color:#fff;padding:28px;position:relative;overflow:hidden;box-shadow:0 20px 40px -20px rgba(0,137,123,.55)}
 .hero::before,.hero::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.12)}
@@ -154,8 +156,8 @@ input{font:inherit;color:inherit}
 .foot{text-align:center;color:var(--mute);font-size:12.5px;margin-top:26px}
 .foot button{color:var(--brand2);font-weight:600;text-decoration:underline}
 @media (max-width:600px){
-  .bar .in{padding:10px 14px;gap:8px}.logo{font-size:16px}.logo i{width:30px;height:30px}
-  .chip{padding:6px 10px;font-size:12px}.chip #netTxt{display:none}.chip::before{width:9px;height:9px}
+  .bar .in{padding:0 14px;gap:10px}
+  
   .wrap{padding:14px 14px 40px}
   .hero{padding:22px 20px;border-radius:24px}
   .big{font-size:44px}.big small{font-size:15px}
@@ -178,10 +180,10 @@ input{font:inherit;color:inherit}
 </head>
 <body>
 <header class="bar"><div class="in">
-  <div class="logo"><i>Q</i>QchauCoin</div><span class="demo">Demo</span>
+  <span class="name">QchauCoin</span><span class="sub">Wallet · versión demo</span>
   <div class="sp"></div>
-  <span class="chip hidden" id="netPill"><span id="netTxt">Cadena válida</span></span>
-  <a class="icon-btn" href="../#qchaucoin" aria-label="Volver al portafolio" title="Volver al portafolio">✕</a>
+  <span class="status hidden" id="netPill"><span id="netTxt">Cadena válida</span></span>
+  <a class="back" href="../#qchaucoin">&larr;<span> Portafolio</span></a>
 </div></header>
 
 <section class="welcome" id="onboard"><div class="wcard">
@@ -191,12 +193,11 @@ input{font:inherit;color:inherit}
   <input id="nameIn" class="field" maxlength="24" placeholder="Tu nombre" autocomplete="off" aria-label="Tu nombre">
   <button class="btn brand" id="createBtn">Crear wallet</button>
   <p class="mono" id="genTxt" style="font-size:12.5px;color:var(--mute);margin:12px 0 0"></p>
-  <div class="feat"><span>🔑 RSA 2048</span><span>✍️ Pagos firmados</span><span>⛓ SHA-256</span></div>
+  <div class="feat"><span>RSA 2048</span><span>Pagos firmados</span><span>SHA-256</span></div>
 </div></section>
 
 <section class="welcome hidden" id="keyStep"><div class="wcard card" style="padding:28px">
-  <div class="coin" style="width:64px;height:64px;font-size:28px;border-radius:20px;margin-bottom:16px">🔑</div>
-  <h1 style="font-size:24px">Guarda tu llave privada</h1>
+    <h1 style="font-size:24px">Guarda tu llave privada</h1>
   <p style="margin-bottom:0">Solo se muestra esta vez y firma todos tus pagos.</p>
   <pre class="pem" id="privPem"></pre>
   <div class="warn">Quien la tenga puede mover tus fondos. Nunca la compartas.</div>
@@ -211,10 +212,10 @@ input{font:inherit;color:inherit}
     <div class="fiat">≈ $<span id="balMxn">0.00</span> MXN · $<span id="balUsd">0.00</span> USD</div>
     <div class="addr"><span class="mono" id="myAddr"></span><button id="copyAddr">Copiar</button></div>
     <div class="actions">
-      <button class="act" id="goSend"><span>↗</span>Enviar</button>
-      <button class="act" id="reqBtn"><span>↙</span>Pedir</button>
-      <button class="act" id="goChain"><span>⛓</span>Cadena</button>
-      <button class="act" id="tourBtn"><span>?</span>Ayuda</button>
+      <button class="act" id="goSend"><span><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></span>Enviar</button>
+      <button class="act" id="reqBtn"><span><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M15 17H7V9"/></svg></span>Pedir</button>
+      <button class="act" id="goChain"><span><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span>Cadena</button>
+      <button class="act" id="tourBtn"><span><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17h.01"/></svg></span>Ayuda</button>
     </div>
     <div class="stats"><div class="stat"><b>1 QCC</b>= 1 MXN</div><div class="stat"><b>70/30</b>MXN/USD</div><div class="stat"><b id="height">0</b>bloques</div></div>
   </section>
@@ -253,7 +254,7 @@ input{font:inherit;color:inherit}
 </main>
 
 <div class="scrim hidden" id="tour" role="dialog" aria-modal="true" aria-labelledby="tTitle"><div class="modal">
-  <div class="em" id="tEm"></div><div class="dots" id="tDots"></div>
+  <div class="dots" id="tDots"></div>
   <h3 id="tTitle"></h3><p id="tText"></p>
   <div class="mrow"><button class="btn line" id="tSkip">Cerrar</button><button class="btn brand" id="tNext">Siguiente</button></div>
 </div></div>
@@ -283,14 +284,14 @@ document.addEventListener("click",function(e){
 });
 
 /* recorrido y "cómo funciona" */
-var SETS={tour:[["👋","Esta es tu wallet","Tu saldo, tu dirección pública y accesos rápidos para enviar, pedir y ver la cadena."],
- ["✍️","Cada pago va firmado","Al enviar, tu llave privada firma el pago y tu llave pública lo verifica. Lo ves paso a paso."],
- ["⛓","Rompe la cadena","En Cadena, altera un bloque viejo: su hash deja de coincidir y la cadena se marca como rota."]],
- about:[["🔑","Llaves","RSA 2048 con Web Crypto. La privada no sale de tu navegador; en el proyecto original el servidor la entrega una vez y no la guarda."],
- ["⛓","Bloques","Cada bloque guarda sus pagos, su hora y el hash SHA-256 del anterior. El original los guarda en MongoDB con transacciones atómicas."],
- ["⚠️","Límites","Demo académica: sin prueba de trabajo ni red de nodos. Al recargar la página empieza de cero."]]},cur=[],tI=0;
+var SETS={tour:[["","Esta es tu wallet","Tu saldo, tu dirección pública y accesos rápidos para enviar, pedir y ver la cadena."],
+ ["","Cada pago va firmado","Al enviar, tu llave privada firma el pago y tu llave pública lo verifica. Lo ves paso a paso."],
+ ["","Rompe la cadena","En Cadena, altera un bloque viejo: su hash deja de coincidir y la cadena se marca como rota."]],
+ about:[["","Llaves","RSA 2048 con Web Crypto. La privada no sale de tu navegador; en el proyecto original el servidor la entrega una vez y no la guarda."],
+ ["","Bloques","Cada bloque guarda sus pagos, su hora y el hash SHA-256 del anterior. El original los guarda en MongoDB con transacciones atómicas."],
+ ["","Límites","Demo académica: sin prueba de trabajo ni red de nodos. Al recargar la página empieza de cero."]]},cur=[],tI=0;
 function show(set,i){cur=SETS[set]||cur;tI=i;if(i>=cur.length){$("tour").classList.add("hidden");return}var t=cur[i];$("tour").classList.remove("hidden");
-  $("tEm").textContent=t[0];$("tTitle").textContent=t[1];$("tText").textContent=t[2];
+  $("tTitle").textContent=t[1];$("tText").textContent=t[2];
   $("tDots").innerHTML=cur.map(function(_,j){return'<i class="'+(j===i?"on":"")+'"></i>'}).join("");$("tNext").textContent=i===cur.length-1?"Listo":"Siguiente";$("tNext").focus()}
 $("tNext").onclick=function(){show(null,tI+1)};$("tSkip").onclick=function(){show(null,99)};
 $("tourBtn").onclick=function(){show("tour",0)};$("aboutBtn").onclick=function(){show("about",0)};
@@ -351,7 +352,7 @@ function render(){
     var rows=[];chain.forEach(function(b,i){b.transacciones.forEach(function(t,j){if(t.de===me.addr||t.para===me.addr)rows.push({t:t,b:i,ok:v[i].sigs[j]})})});
     $("txCount").textContent=rows.length+" movimiento"+(rows.length===1?"":"s");
     $("history").innerHTML=rows.length?rows.reverse().slice(0,6).map(function(r){var out=r.t.de===me.addr,other=out?r.t.para:r.t.de;
-      return'<div class="tx"><div class="ic" style="background:'+colorOf(other)+'">'+nameOf(other)[0]+'</div><div><b>'+nameOf(other)+(r.t.de==="RESERVA"?'':'<span class="ok'+(r.ok?'':' bad')+'">'+(r.ok?'✓ firmado':'✗ firma')+'</span>')+'</b><small>'+r.t.concepto+'</small></div>'+
+      return'<div class="tx"><div class="ic" style="background:'+colorOf(other)+'">'+nameOf(other)[0]+'</div><div><b>'+nameOf(other)+(r.t.de==="RESERVA"?'':'<span class="ok'+(r.ok?'':' bad')+'">'+(r.ok?'firmado':'firma inválida')+'</span>')+'</b><small>'+r.t.concepto+'</small></div>'+
       '<div class="amt '+(out?'':'pos')+'">'+(out?'−':'+')+fmt(r.t.cantidad)+'<small style="color:var(--mute);font-weight:500">QCC</small></div></div>'}).join(""):'<p class="empty">Aún no hay movimientos.</p>';
   });
 }
@@ -362,7 +363,7 @@ function transfer(from,to,amount,concept){
   for(var i=0;i<5;i++)flow(i,"");
   flow(0,"on");trace(nameOf(t.de)+' → '+nameOf(t.para)+' · <b>'+fmt(t.cantidad)+' QCC</b>');
   return sleep(380).then(function(){return signTx(from,t)}).then(function(){flow(1,"on");trace('firma RSA-2048 <b>'+short(hex(unb64(t.firma)),28)+'</b>');return sleep(380).then(function(){return verifyTx(t)})})
-  .then(function(ok){flow(2,ok?"on":"fail");if(!ok){trace("La firma no corresponde.");throw new Error("Firma inválida")}trace('firma verificada con la llave pública ✓');return sleep(380)})
+  .then(function(ok){flow(2,ok?"on":"fail");if(!ok){trace("La firma no corresponde.");throw new Error("Firma inválida")}trace('firma verificada con la llave pública');return sleep(380)})
   .then(function(){var have=balances()[t.de]||0;if(have<t.cantidad){flow(3,"fail");trace('saldo '+fmt(have)+' QCC · no alcanza');throw new Error("Saldo insuficiente")}
     flow(3,"on");trace('saldo '+fmt(have)+' → <b>'+fmt(have-t.cantidad)+' QCC</b>');return sleep(380).then(function(){return makeBlock([t])})})
   .then(function(b){b._new=true;selBlock=b.indice;flow(4,"on");trace('bloque #'+b.indice+' · hash <b>'+short(b.hash,16)+'</b> · prev '+short(b.hashAnterior,10));return render()});
