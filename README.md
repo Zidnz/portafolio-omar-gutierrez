@@ -14,6 +14,7 @@ Portafolio web de **Omar Gutiérrez Escoto** (Ciudad de México), Data Scientist
 - Detalles de juego (ventanas, misiones, inventario y cinta animada), ilustraciones vectoriales y tipografía suave.
 - Sitio en **español e inglés** con selector ES | EN en el encabezado (recuerda la elección y usa el idioma del navegador la primera vez).
 - Descarga del CV en español (`CV_Omar_Gutierrez_Escoto.pdf`) y en inglés (`Resume_Omar_Gutierrez_Escoto.pdf`) desde la portada, la tarjeta de contacto y el pie de página.
+- Mesa antifraude en `fraude/`: reproduce un día real del mes de prueba de IEEE-CIS (2,931 transacciones) puntuado por el modelo, con cola de revisión, explicaciones y casos parecidos. Los umbrales salen del mes de validación.
 - Wallet simulada de QchauCoin en `qchaucoin/`: llaves RSA 2048, transacciones firmadas y una cadena SHA-256 que se puede alterar, todo con Web Crypto en el navegador.
 - Inventario de herramientas, con las de mi experiencia real en Veolia marcadas (Tableau, Salesforce CRM, CRM Analytics y Looker Studio).
 - Sin dependencias ni paso de compilación: HTML, CSS y JavaScript puros.
