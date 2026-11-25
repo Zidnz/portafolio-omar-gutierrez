@@ -12,6 +12,7 @@ function onView(node,start,stop){if(!('IntersectionObserver'in window)){start();
 var fmt=function(n){return Math.round(n).toLocaleString('es-MX')};
 
 /* ================= CONTENIDO ================= */
+var APPL={fraude:['Abrir la mesa antifraude ↗'],qchaucoin:['Abrir la wallet simulada ↗'],observatorio:['Abrir el Observatorio ↗','Probar RedCare ↗']};
 var P=[
 {id:'fraude',n:'01',c:K.alert,cs:'rgba(196,86,107,.13)',kick:'Banca digital · 2026',title:'Detección de fraude en transacciones',
  sub:'El proyecto parte de 590,540 transacciones reales en un lakehouse con Spark, Kafka y PostgreSQL.',
@@ -53,7 +54,7 @@ var P=[
 
 {id:'observatorio',n:'03',c:K.vio,cs:'rgba(111,95,176,.14)',kick:'Política social · 2026, en curso',title:'Observatorio de la Economía del Cuidado',
  sub:'Datos para diseñar un programa de relevo por horas para quienes cuidan en casa, sin pago, a personas con discapacidad o adultas mayores.',
- chips:['Equipo de 3 · líder','ENASIC 2022','Censo 2020','Python + R','SQLite','HTML, CSS y JS'],cover:'o-home',app:'https://zidnz.github.io/pp26-2/Frontend/observatorio/',
+ chips:['Equipo de 3 · líder','ENASIC 2022','Censo 2020','Python + R','SQLite','HTML, CSS y JS'],cover:'o-home',app:['https://zidnz.github.io/pp26-2/Frontend/observatorio/','https://zidnz.github.io/pp26-2/Frontend/'],
  tldr:['El programa tendría cupo limitado. Hay que decidir a quién ofrecer primero el relevo y en qué zonas pilotear, y poder defender esa decisión con datos públicos.',
        'Integramos encuestas y censos en un almacén de indicadores, probamos si un modelo ordena mejor que una regla simple, tipificamos el territorio y lo publicamos en un observatorio web.',
        'Ningún modelo superó de forma demostrable a la regla de 40 horas de cuidado a la semana. Nos quedamos con la regla, que cualquiera puede entender.'],
@@ -183,7 +184,7 @@ P.forEach(function(p){var x=X[p.id];
   r.appendChild(el('div','tldr',['Jefe final: el problema','Estrategia: lo que hicimos','Botín: el resultado'].map(function(t,i){return '<div class="tl"><h4>'+t+'</h4><p>'+p.tldr[i]+'</p></div>'}).join('')));
   r.appendChild(el('h3','sec','Logros'));
   r.appendChild(el('div','kpis',p.kpis.map(function(k){return '<div class="kpi"><b class="num">'+k[0]+'</b><small>'+k[1]+'</small></div>'}).join('')));
-  r.appendChild(el('div','foot3','<div class="lim"><h4>Puntos débiles, dicho sin rodeos</h4><p>'+p.lim+'</p></div><div class="meta"><h4>Código</h4><p>Todo el código, los notebooks y la documentación están en el repositorio.</p><p style="margin-top:8px"><a href="'+p.repo[0]+'" target="_blank" rel="noopener noreferrer">'+p.repo[1]+'</a></p>'+(p.app?'<p style="margin-top:8px"><a href="'+p.app+'" target="_blank" rel="noopener">'+T(p.id==='fraude'?'Abrir la mesa antifraude ↗':p.id==='observatorio'?'Abrir el Observatorio ↗':'Abrir la wallet simulada ↗')+'</a></p>':'')+'</div>'));
+  r.appendChild(el('div','foot3','<div class="lim"><h4>Puntos débiles, dicho sin rodeos</h4><p>'+p.lim+'</p></div><div class="meta"><h4>Código</h4><p>Todo el código, los notebooks y la documentación están en el repositorio.</p><p style="margin-top:8px"><a href="'+p.repo[0]+'" target="_blank" rel="noopener noreferrer">'+p.repo[1]+'</a></p>'+(p.app?[].concat(p.app).map(function(u,k){return'<p style="margin-top:8px"><a href="'+u+'" target="_blank" rel="noopener">'+T(APPL[p.id][k])+'</a></p>'}).join(''):'')+'</div>'));
   var nx=el('div','cta');nx.innerHTML='<button class="pill go" type="button">Siguiente: recorrido →</button>';nx.firstChild.onclick=function(){open('rec')};r.appendChild(nx);
 
   /* 2 recorrido */
