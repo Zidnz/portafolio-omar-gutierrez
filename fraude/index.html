@@ -134,7 +134,35 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .mrow{display:flex;gap:10px}
 .btn{flex:1;padding:13px;border-radius:14px;font-weight:700;background:var(--grad);color:#fff}
 .btn.line{background:#fff;color:var(--ink);border:1px solid var(--line)}
-@media (max-width:480px){.logo{font-size:15px;white-space:nowrap}.chip{display:none}.htop h1{font-size:22px}}
+.st{display:none}
+.mtabs{display:none}
+@media (max-width:720px){
+  .bar .in{padding:10px 14px;gap:8px}.logo{font-size:15px;white-space:nowrap}.chip{padding:6px 10px;font-size:12px}
+  .wrap{padding:14px 14px 40px}
+  .hero{padding:20px 18px;border-radius:24px}
+  .htop{gap:14px}.htop h1{font-size:21px}.htop p{font-size:13px}
+  .play{width:100%}.play .sp{display:none}
+  .pbtn{width:44px;height:44px;flex:none}.ghost{height:44px;padding:0 12px}#speed{flex:1;display:flex;gap:6px}#speed .ghost{flex:1}
+  .lg{display:none}.st{display:inline}
+  .kpis{grid-template-columns:repeat(2,1fr);gap:8px;margin-top:16px}
+  .kpi{padding:11px 13px;border-radius:15px}.kpi b{font-size:22px}.kpi span{font-size:11.5px}
+  .kpi.main{display:flex;align-items:baseline;gap:10px}.kpi.main b{font-size:36px}
+  .ctl{gap:10px;margin-top:14px}
+  .ctl>div:first-child{width:100%}.seg{flex:1;display:grid;grid-template-columns:repeat(3,1fr)}.seg button{padding:9px 6px}
+  .cap{min-width:0;width:100%;flex-wrap:wrap;gap:6px 10px;padding:12px 14px}
+  .cap input{order:5;flex-basis:100%}.cap small{margin-left:auto}
+  .mtabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;position:sticky;top:57px;z-index:15;margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:4px;box-shadow:var(--sh)}
+  .mtabs button{padding:10px 4px;border-radius:10px;font-weight:650;font-size:13.5px;color:var(--soft)}
+  .mtabs button[aria-selected="true"]{background:var(--ink);color:#fff}
+  .mtabs span{display:inline-block;min-width:18px;padding:0 5px;border-radius:99px;background:var(--brand);color:#fff;font-size:11px;margin-left:4px}
+  .mtabs span:empty{display:none}
+  .cols{grid-template-columns:1fr;margin-top:10px}
+  .pane{display:none}.pane.on{display:block}.hm{display:none}
+  .feed,.queue{height:auto;max-height:62vh}
+  .card{padding:16px;border-radius:20px}
+  .det h3{font-size:26px}.meters{gap:6px}.meter{padding:9px}.meter b{font-size:16px}
+  .q .pop,.pop{left:auto;right:-8px;width:min(270px,calc(100vw - 40px))}
+}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -151,7 +179,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     <div class="htop">
       <div><h1>Día <span id="nDia"></span> · <span id="nTx"></span> transacciones</h1><p>Datos reales de IEEE-CIS puntuados por el modelo.</p></div>
       <div class="sp"></div>
-      <div class="play"><button class="pbtn" id="play" aria-label="Pausar">❚❚</button><span id="speed" style="display:flex;gap:6px"></span><button class="ghost" id="end">Ver día completo</button></div>
+      <div class="play"><button class="pbtn" id="play" aria-label="Pausar">❚❚</button><span id="speed" style="display:flex;gap:6px"></span><button class="ghost" id="end"><span class="lg">Ver día completo</span><span class="st">Fin ⏭</span></button></div>
     </div>
     <div class="kpis">
       <div class="kpi main"><b id="kUsd">—</b><span>del dinero de fraude salvado</span></div>
@@ -170,15 +198,16 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="q" data-pop="Qué porcentaje de las transacciones alcanza a revisar el equipo. El umbral sale del mes de validación, no de este día.">?</button></div>
   </div>
 
+  <div class="mtabs" role="tablist" aria-label="Vista"><button role="tab" data-p="0" aria-selected="false">Entrando</button><button role="tab" data-p="1" aria-selected="true">Cola <span id="qBadge"></span></button><button role="tab" data-p="2" aria-selected="false">Detalle</button></div>
   <div class="cols">
-    <section class="card"><div class="ch"><h2>Entrando</h2><small>desde Kafka</small></div><div class="feed" id="feed"></div></section>
-    <section class="card"><div class="ch"><h2>Cola</h2><small id="qN">0 pendientes</small></div><div class="queue" id="queue"><p class="empty">Aún no hay alertas.</p></div></section>
-    <section class="card dcol"><div class="ch"><h2>Detalle</h2><button class="q" data-pop="La explicación compara cada rasgo con el historial: “fraude ×3” significa que en ese grupo el fraude es 3 veces más común. Los casos parecidos son los 7 más cercanos ya resueltos.">?</button></div>
+    <section class="card pane" data-p="0"><div class="ch"><h2>Entrando</h2><small>desde Kafka</small></div><div class="feed" id="feed"></div></section>
+    <section class="card pane" data-p="1"><div class="ch"><h2>Cola</h2><small id="qN">0 pendientes</small></div><div class="queue" id="queue"><p class="empty">Aún no hay alertas.</p></div></section>
+    <section class="card dcol pane" data-p="2"><div class="ch"><h2>Detalle</h2><button class="q" data-pop="La explicación compara cada rasgo con el historial: “fraude ×3” significa que en ese grupo el fraude es 3 veces más común. Los casos parecidos son los 7 más cercanos ya resueltos.">?</button></div>
       <div class="det" id="det"><p class="empty">Elige una alerta de la cola.</p></div></section>
   </div>
 
   <section class="card" style="margin-top:18px">
-    <div class="ch"><h2>¿Y con otro criterio?</h2><small>mismo día, misma capacidad</small></div>
+    <div class="ch"><h2>¿Y con otro criterio?</h2><small class="hm">mismo día, misma capacidad</small></div>
     <div class="cmp" id="cmp"></div>
     <p style="color:var(--soft);font-size:13px;margin-top:12px" id="cmpTxt"></p>
   </section>
@@ -195,7 +224,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 <script>
 "use strict";
 var D=window.DIA,TX=D.tx,$=function(i){return document.getElementById(i)};
-var CRIT=[["pe","Pérdida esperada"],["prob","Probabilidad"],["monto","Monto"]],SPEEDS=[["1×",240],["4×",960],["16×",3840]];
+var CRIT=[["pe","Pérdida esperada","Pérdida"],["prob","Probabilidad","Prob."],["monto","Monto","Monto"]],SPEEDS=[["1×",240],["4×",960],["16×",3840]];
 var crit="pe",cap=0.035,speed=960,playing=false,t=0,idx=0,sel=null,last=performance.now(),opened={};
 var totalFraudUsd=TX.reduce(function(s,x){return x[4]?s+x[1]:s},0);
 function score(x,c){c=c||crit;return c==="prob"?x[3]:c==="pe"?x[3]*x[1]:x[1]}
@@ -225,7 +254,7 @@ $("tNext").onclick=function(){show(null,tI+1)};$("tSkip").onclick=function(){sho
 document.addEventListener("keydown",function(e){if(e.key==="Escape")show(null,99)});
 
 function drawCtl(){
-  var c=$("crit");c.innerHTML="";CRIT.forEach(function(it){var b=document.createElement("button");b.type="button";b.textContent=it[1];b.setAttribute("aria-pressed",String(it[0]===crit));b.onclick=function(){crit=it[0];drawCtl();recompute()};c.appendChild(b)});
+  var c=$("crit");c.innerHTML="";CRIT.forEach(function(it){var b=document.createElement("button");b.type="button";b.innerHTML='<span class="lg">'+it[1]+'</span><span class="st">'+it[2]+'</span>';b.setAttribute("aria-label",it[1]);b.setAttribute("aria-pressed",String(it[0]===crit));b.onclick=function(){crit=it[0];drawCtl();recompute()};c.appendChild(b)});
   var s=$("speed");s.innerHTML="";SPEEDS.forEach(function(it){var b=document.createElement("button");b.type="button";b.className="ghost";b.textContent=it[0];b.setAttribute("aria-pressed",String(it[1]===speed));b.setAttribute("aria-label","Velocidad "+it[0]);b.onclick=function(){speed=it[1];drawCtl()};s.appendChild(b)});
   $("capOut").textContent=(cap*100).toFixed(1).replace(".0","")+"%";
   var al=TX.filter(function(x){return flagged(x)}).length;$("capAn").textContent=al+" alertas · "+Math.max(1,Math.ceil(al*10/480))+" analista"+(Math.ceil(al*10/480)>1?"s":"");
@@ -239,12 +268,12 @@ function feedRow(x){var f=flagged(x),r=document.createElement("div");r.className
   var fd=$("feed");fd.insertBefore(r,fd.firstChild);while(fd.children.length>12)fd.removeChild(fd.lastChild)}
 function queue(){
   var al=[];for(var i=0;i<idx;i++)if(flagged(TX[i]))al.push(i);al.sort(function(a,b){return score(TX[b])-score(TX[a])});
-  var pend=al.filter(function(i){return!opened[i]}).length;$("qN").textContent=pend+" pendiente"+(pend===1?"":"s");
+  var pend=al.filter(function(i){return!opened[i]}).length;$("qN").textContent=pend+" pendiente"+(pend===1?"":"s");$("qBadge").textContent=pend?pend:"";
   var q=$("queue");if(!al.length){q.innerHTML='<p class="empty">Aún no hay alertas.</p>';return}
   q.innerHTML="";al.slice(0,60).forEach(function(i){var x=TX[i],b=document.createElement("button");b.type="button";b.className="al"+(sel===i?" sel":"");
     var st=opened[i]==="r"?(x[4]?'<span class="badge r">fraude</span>':'<span class="badge ok">legítima</span>'):'';
     b.innerHTML='<b><span class="prod">'+x[2]+'</span>'+usd(x[1])+'</b><span class="s">'+(crit==="pe"?"−"+usd(x[3]*x[1]):Math.round(x[3]*100)+"%")+'</span><p>'+(x[6].length?cap1(x[6][0][0]):"Combinación de rasgos")+'</p>'+(st?'<span style="grid-column:1/-1">'+st+'</span>':'');
-    b.onclick=function(){sel=i;if(!opened[i])opened[i]="v";queue();detail()};q.appendChild(b)})}
+    b.onclick=function(){sel=i;if(!opened[i])opened[i]="v";queue();detail();if(matchMedia("(max-width:720px)").matches){setPane(2);window.scrollTo({top:document.querySelector(".mtabs").offsetTop-64,behavior:"smooth"})}};q.appendChild(b)})}
 function detail(){
   if(sel===null)return;var x=TX[sel],rev=opened[sel]==="r",cbr="";for(var k=0;k<7;k++)cbr+='<i class="'+(k<x[5]?"f":"")+'"></i>';
   $("det").innerHTML='<h3>'+usd(x[1])+'</h3><div class="sub">Producto '+x[2]+' · '+hhmm(x[0])+'</div>'+
@@ -273,6 +302,8 @@ function step(now){var dt=Math.min(.1,(now-last)/1000);last=now;
   requestAnimationFrame(step)}
 $("play").onclick=function(){if(t>=86400){t=0;idx=0;sel=null;opened={};$("feed").innerHTML="";$("det").innerHTML='<p class="empty">Elige una alerta de la cola.</p>';recompute()}setPlay(!playing)};
 $("end").onclick=function(){t=86400;idx=TX.length;$("feed").innerHTML="";TX.slice(-12).forEach(feedRow);setPlay(false);recompute()};
+var pane=1;function setPane(i){pane=i;document.querySelectorAll(".mtabs button").forEach(function(b){b.setAttribute("aria-selected",String(+b.dataset.p===i))});document.querySelectorAll(".pane").forEach(function(x){x.classList.toggle("on",+x.dataset.p===i)})}
+document.querySelectorAll(".mtabs button").forEach(function(b){b.onclick=function(){setPane(+b.dataset.p)}});setPane(1);
 drawCtl();recompute();setPlay(false);requestAnimationFrame(step);
 if(matchMedia("(prefers-reduced-motion: reduce)").matches)$("end").onclick();
 else{afterTour=function(){setPlay(true)};show("tour",0)}

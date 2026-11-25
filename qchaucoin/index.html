@@ -55,6 +55,8 @@ input{font:inherit;color:inherit}
 @media (max-width:880px){.grid{grid-template-columns:1fr}}
 .card{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);padding:22px;border:1px solid rgba(16,40,46,.04)}
 .ch{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.cbtns{display:flex;gap:8px}
+@media (max-width:600px){.cbtns{width:100%}.cbtns .btn{flex:1}}
 .ch h2{font-size:17px;font-weight:750;letter-spacing:-.01em}
 .q{width:22px;height:22px;border-radius:50%;background:var(--bg);color:var(--soft);font-size:12px;font-weight:800;display:grid;place-items:center;position:relative}
 .q:hover,.q[aria-expanded="true"]{background:var(--brandbg);color:var(--brand2)}
@@ -137,6 +139,26 @@ input{font:inherit;color:inherit}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .foot{text-align:center;color:var(--mute);font-size:12.5px;margin-top:26px}
 .foot button{color:var(--brand2);font-weight:600;text-decoration:underline}
+@media (max-width:600px){
+  .bar .in{padding:10px 14px;gap:8px}.logo{font-size:16px}.logo i{width:30px;height:30px}
+  .chip{padding:6px 10px;font-size:12px}.chip #netTxt{display:none}.chip::before{width:9px;height:9px}
+  .wrap{padding:14px 14px 40px}
+  .hero{padding:22px 20px;border-radius:24px}
+  .big{font-size:44px}.big small{font-size:15px}
+  .addr{width:100%;margin-top:14px}
+  .actions{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:18px}
+  .act span{width:100%;max-width:58px;height:52px}
+  .stats{display:flex;gap:6px;margin-top:16px}.stat{flex:1;padding:8px 10px;font-size:11px;border-radius:12px}.stat b{font-size:14px}
+  .grid{gap:14px;margin-top:14px}
+  .card{padding:18px;border-radius:20px}
+  .amount input{font-size:34px}
+  .ch .btn.sm{flex:1}
+  .ch .sp{display:none}
+  .steps i{width:32px;height:32px}.stp{font-size:11px}
+  .blk{flex-basis:156px}
+  .welcome{min-height:calc(100vh - 56px)}.wcard h1{font-size:28px}
+  .toast{bottom:16px;max-width:calc(100vw - 32px);text-align:center}
+}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -208,7 +230,7 @@ input{font:inherit;color:inherit}
 
   <section class="card" style="margin-top:18px" id="chainCard">
     <div class="ch"><h2>Cadena</h2><button class="q" data-pop="Cada bloque guarda el hash del anterior. Si alteras un bloque viejo, su hash y su firma dejan de coincidir y el enlace con los siguientes se rompe.">?</button>
-      <span class="sp"></span><button class="btn line sm" id="tamperBtn">Alterar bloque</button><button class="btn line sm" id="repairBtn">Restaurar</button></div>
+      <span class="sp"></span><span class="cbtns"><button class="btn line sm" id="tamperBtn">Alterar bloque</button><button class="btn line sm" id="repairBtn">Restaurar</button></span></div>
     <div class="chain" id="chain"></div>
     <div class="kv" id="detail"></div>
   </section>
