@@ -170,8 +170,10 @@ var EN_B=[
 ['Dinámica','Dynamics'],
 ['El precio como ecu','Price as a differential equation'],
 ['dP/dt = α(R − P)','dP/dt = α(R − P) + βD(t) − γI(t). Backing pulls the price toward its target R, demand pushes it, and inflation erodes it. Solved with Euler’s method for 180 days.'],
-['Imagen del proyect','Project image'],
-['Concepto del moned','Wallet concept: send and receive'],
+['Wallet simulada: s','Simulated wallet: balance, contacts and a signed transfer'],
+['Cada pago: firma R','Every payment: RSA signature, verification and a new block'],
+['Cadena alterada: e','Tampered chain: the hash no longer matches and the link breaks'],
+['La llave privada s','The private key is shown only once'],
 ['Arquitectura de la','Architecture of the risk neural network'],
 ['Correlaciones entr','Correlations between financial variables'],
 ['Perfil de QchauCoi','QchauCoin profile'],
@@ -318,10 +320,10 @@ var EN_C=[
 var EN_SINGLE={'Modelos':'Models','Meta':'Goal','Datos':'Data','Producto':'Product','Pregunta':'Question','Fuentes':'Sources','Territorio':'Territory','Identidad':'Identity','Firma':'Signature','Bloques':'Blocks','Modelo':'Model','Analista':'Analyst','Registro':'Sign-up','Bloque':'Block','dimensiones':'dimensions','colecciones':'collections','vistas':'views','vista':'view','tabla':'table','estrella':'star','texto':'text'};
 
 /* Textos de la interfaz (coincidencia exacta con el texto en español) */
-var EN_UI={
+var EN_UI={'Abrir la wallet simulada ↗':'Open the simulated wallet ↗',
 'Inicio':'Home','01 Fraude':'01 Fraud','03 Observatorio':'03 Observatory','Claro':'Light','Oscuro':'Dark','7.º SEM':'7th SEM',
 'Datos que':'Data that','toman':'drives','decisiones':'decisions',
-'Estudiante de Ciencia de Datos para el Negocio en la UNRC y Junior Data Analyst en Veolia. Busco la historia escondida en los datos, la pruebo con rigor y la cuento para que cualquiera la entienda.':'Data Science for Business student at UNRC and Junior Data Analyst at Veolia. I look for the story hidden in the data, test it rigorously and tell it so anyone can understand it.',
+'Estudiante de Ciencia de Datos para el Negocio en la UNRC y Data Analyst Intern en Veolia. Busco la historia escondida en los datos, la pruebo con rigor y la cuento para que cualquiera la entienda.':'Data Science for Business student at UNRC and Data Analyst Intern at Veolia. I look for the story hidden in the data, test it rigorously and tell it so anyone can understand it.',
 'Ver misiones ›':'See missions ›','Descargar CV':'Download CV','NIVEL 7 · XP':'LEVEL 7 · XP',
 'Ahora corriendo: lakehouse de fraude en Spark ♪ · · · batch = streaming ✓ · · · ETo del día: 7.1 mm · · · regla de 40 h contra modelos: sin ganador claro · · · QchauCoin = 1.00 · · · gracias por visitar ✦ · · ·':'Now running: fraud lakehouse on Spark ♪ · · · batch = streaming ✓ · · · ETo of the day: 7.1 mm · · · 40 h rule vs models: no clear winner · · · QchauCoin = 1.00 · · · thanks for visiting ✦ · · ·',
 'Cómo trabajo':'How I work',
@@ -329,7 +331,7 @@ var EN_UI={
 'Limpiar y explorar':'Clean and explore','Duplicados, etapas, monedas y patrones raros salen a la luz.':'Duplicates, stages, currencies and odd patterns come to light.',
 'Modelar y poner a prueba':'Model and stress-test','Evaluar con el futuro, comparar contra una regla simple, desconfiar de lo perfecto.':'Evaluate on the future, compare against a simple rule, distrust anything perfect.',
 'Explicar y decidir':'Explain and decide','Un tablero o una cola de trabajo que alguien pueda usar mañana.':'A dashboard or a work queue someone can use tomorrow.',
-'En números':'In numbers','transacciones reales analizadas':'real transactions analyzed','pruebas automáticas en un proyecto':'automated tests in one project','proyectos de punta a punta':'end-to-end projects','1 año':'1 year','como Junior Data Analyst en Veolia':'as Junior Data Analyst at Veolia',
+'En números':'In numbers','transacciones reales analizadas':'real transactions analyzed','pruebas automáticas en un proyecto':'automated tests in one project','proyectos de punta a punta':'end-to-end projects','Desde 2025':'Since 2025','Data Analyst Intern en Veolia':'Data Analyst Intern at Veolia',
 'Mis reglas':'My rules',
 'Si el resultado es perfecto, sospecha.':'If the result is perfect, be suspicious.','Un recall del 100% casi siempre esconde una fuga de información.':'A 100% recall almost always hides an information leak.',
 'Evalúa con el futuro, no con el azar.':'Evaluate on the future, not on chance.','Partir los datos por tiempo evita resultados demasiado optimistas.':'Splitting the data by time avoids overly optimistic results.',
