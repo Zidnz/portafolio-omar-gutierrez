@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mesa antifraude · un día real de transacciones</title>
+<meta name="description" content="Consola del analista de fraude: un día real del mes de prueba de IEEE-CIS, puntuado por el modelo, con cola de revisión, explicaciones y casos parecidos.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23ff6b81'/%3E%3Cpath d='M16 6l9 4v6c0 5-4 9-9 10-5-1-9-5-9-10v-6z' fill='%23140b10'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#0d0b12;--card:rgba(255,255,255,.045);--card2:rgba(255,255,255,.075);--line:rgba(255,255,255,.09);--ink:#f3eef2;--soft:#a79ca6;--mute:#6f6570;
+--rose:#ff6b81;--rose2:#ff9aab;--rosebg:rgba(255,107,129,.13);--mint:#62e3b5;--mintbg:rgba(98,227,181,.12);--amber:#f6c06b;--ambg:rgba(246,192,107,.12);
+--mono:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",Menlo,Consolas,monospace;--r:18px}
+*{box-sizing:border-box;margin:0;padding:0}
+html{color-scheme:dark}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;min-height:100vh;
+ background-image:radial-gradient(900px 480px at 100% -5%,rgba(255,107,129,.16),transparent 60%),radial-gradient(700px 420px at -5% 40%,rgba(98,227,181,.06),transparent 60%),
+ linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);background-size:auto,auto,40px 40px,40px 40px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--rose2);outline-offset:2px;border-radius:8px}
+.wrap{max-width:1240px;margin:0 auto;padding:22px 20px 56px}
+.mono{font-family:var(--mono)}
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.brand{display:flex;gap:12px;align-items:center}
+.brand svg{width:36px;height:36px}
+.brand b{font-size:19px;letter-spacing:-.01em;display:block}
+.brand small{font-size:12.5px;color:var(--soft)}
+.spacer{flex:1}
+.back{font-size:13px;color:var(--soft);text-decoration:none}.back:hover{color:var(--ink)}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:13px;color:var(--soft)}
+.live{width:8px;height:8px;border-radius:50%;background:var(--rose);box-shadow:0 0 0 4px rgba(255,107,129,.2)}
+.paused .live{background:var(--mute);box-shadow:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;backdrop-filter:blur(8px)}
+.card h2{font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.ctl{display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;margin-bottom:16px}
+@media (max-width:900px){.ctl{grid-template-columns:1fr}}
+.seg{display:inline-flex;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:12px;padding:4px;gap:2px;flex-wrap:wrap}
+.seg button{padding:8px 12px;border-radius:9px;font-size:13.5px;color:var(--soft);font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--rose);color:#1b0a0f}
+.lab{font-size:12px;color:var(--soft);display:block;margin-bottom:6px}
+.range{display:flex;align-items:center;gap:12px}
+input[type=range]{flex:1;accent-color:var(--rose)}
+.out{font-weight:700;font-variant-numeric:tabular-nums;min-width:120px}
+.out small{display:block;font-weight:500;color:var(--soft);font-size:12px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:11px;background:var(--card2);border:1px solid var(--line);font-weight:600;font-size:13.5px}
+.btn:hover{border-color:rgba(255,255,255,.22)}
+.btn.pri{background:var(--rose);color:#1b0a0f;border-color:transparent}
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
+@media (max-width:1000px){.kpis{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:560px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+.kpi b{display:block;font-size:26px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi span{font-size:12px;color:var(--soft)}
+.kpi.good b{color:var(--mint)}.kpi.bad b{color:var(--rose2)}.kpi.warn b{color:var(--amber)}
+.clock{height:6px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:10px}
+.clock i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--rose),var(--amber))}
+/* layout */
+.main{display:grid;grid-template-columns:.95fr 1.05fr 1.1fr;gap:16px}
+@media (max-width:1100px){.main{grid-template-columns:1fr 1fr}.detail-col{grid-column:1/-1}}
+@media (max-width:720px){.main{grid-template-columns:1fr}}
+.feed{display:flex;flex-direction:column;gap:6px;height:430px;overflow:hidden;mask-image:linear-gradient(#000 80%,transparent)}
+.row{display:grid;grid-template-columns:52px 1fr 70px;gap:10px;align-items:center;padding:8px 10px;border-radius:11px;background:rgba(0,0,0,.25);border:1px solid transparent;font-size:13px;animation:in .35s ease}
+@keyframes in{from{opacity:0;transform:translateY(-8px)}}
+.row.flag{border-color:rgba(255,107,129,.5);background:var(--rosebg)}
+.row .t{font-family:var(--mono);font-size:11.5px;color:var(--mute)}
+.bar{height:6px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:var(--soft)}
+.row.flag .bar i{background:var(--rose)}
+.row .m{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.prod{display:inline-block;font-size:10.5px;padding:1px 6px;border-radius:6px;background:var(--card2);color:var(--soft);margin-right:6px;font-family:var(--mono)}
+.queue{display:flex;flex-direction:column;gap:8px;height:430px;overflow:auto;padding-right:4px}
+.al{text-align:left;width:100%;padding:11px 12px;border-radius:13px;background:rgba(0,0,0,.28);border:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:4px 10px;transition:border-color .15s}
+.al:hover{border-color:rgba(255,255,255,.22)}
+.al.sel{border-color:var(--rose2)}
+.al b{font-size:14px}
+.al .pe{font-family:var(--mono);font-size:12px;color:var(--amber);text-align:right}
+.al p{grid-column:1/-1;font-size:12px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st{font-size:11px;padding:2px 8px;border-radius:999px;justify-self:end}
+.st.p{background:var(--card2);color:var(--soft)}.st.f{background:var(--rosebg);color:var(--rose2)}.st.l{background:var(--mintbg);color:var(--mint)}
+.empty{color:var(--soft);font-size:13.5px;padding:10px 2px}
+.det h3{font-size:22px;letter-spacing:-.02em}
+.det .sub{color:var(--soft);font-size:13px;margin-bottom:12px}
+.meters{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.meter{background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:12px;padding:10px}
+.meter b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.meter span{font-size:11.5px;color:var(--soft)}
+.why{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.why div{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;font-size:13.5px;padding:9px 11px;background:rgba(0,0,0,.25);border-radius:11px;border-left:3px solid var(--rose)}
+.why em{font-style:normal;font-family:var(--mono);font-size:12px;color:var(--rose2)}
+.cbr{display:flex;gap:5px;align-items:center;margin:6px 0 4px}
+.cbr i{width:22px;height:22px;border-radius:6px;background:var(--mintbg);border:1px solid rgba(98,227,181,.35)}
+.cbr i.f{background:var(--rosebg);border-color:rgba(255,107,129,.5)}
+.verdict{margin-top:14px;padding:14px;border-radius:14px;font-weight:600;display:none}
+.verdict.f{display:block;background:var(--rosebg);color:var(--rose2);border:1px solid rgba(255,107,129,.4)}
+.verdict.l{display:block;background:var(--mintbg);color:var(--mint);border:1px solid rgba(98,227,181,.35)}
+.cmp{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:760px){.cmp{grid-template-columns:1fr}}
+.cmpc{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:14px;padding:14px}
+.cmpc.on{border-color:var(--rose2)}
+.cmpc h4{font-size:14px;margin-bottom:10px}
+.hb{display:grid;grid-template-columns:120px 1fr 54px;gap:8px;align-items:center;font-size:12.5px;color:var(--soft);margin-top:7px}
+.hb div{height:10px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden}
+.hb div i{display:block;height:100%}
+.hb b{color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+.note{font-size:12.5px;color:var(--mute);margin-top:22px;text-align:center;max-width:90ch;margin-left:auto;margin-right:auto}
+.lead{color:var(--soft);font-size:14px;max-width:96ch;margin:-4px 0 16px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><svg viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="10" fill="#ff6b81"/><path d="M18 7l10 4.4v6.6c0 5.6-4.3 10.2-10 11.4-5.7-1.2-10-5.8-10-11.4v-6.6z" fill="#1b0a0f"/><path d="M13.5 18.5l3 3 6-6.5" stroke="#ff9aab" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><b>Mesa antifraude</b><small id="subt"></small></div></div>
+    <div class="spacer"></div>
+    <span class="pill" id="livePill"><span class="live"></span><span id="liveTxt">En vivo desde Kafka</span></span>
+    <a class="back" href="../#fraude">← Volver al portafolio</a>
+  </header>
+  <p class="lead">Reproduce un día real del último mes de los datos (IEEE-CIS). Cada transacción llega sin etiqueta, el modelo la puntúa y, si pasa el umbral, entra a la cola. Tú decides cómo ordenar la cola y cuánto alcanza a revisar el equipo. Al abrir una alerta ves por qué se marcó y si de verdad era fraude.</p>
+
+  <section class="card ctl" aria-label="Controles">
+    <div><span class="lab">Cómo ordenar la cola</span><div class="seg" id="crit" role="group" aria-label="Criterio"></div></div>
+    <div><label class="lab" for="cap">Capacidad del equipo: porcentaje de transacciones que puede revisar</label>
+      <div class="range"><input id="cap" type="range" min="1" max="10" step="0.5" value="3.5"><div class="out"><span id="capOut"></span><small id="capAn"></small></div></div></div>
+    <div class="btns"><button class="btn pri" id="play">⏸ Pausar</button><div class="seg" id="speed" role="group" aria-label="Velocidad"></div><button class="btn" id="end">Ver el día completo</button><button class="btn" id="restart">↺</button></div>
+  </section>
+
+  <div class="kpis">
+    <div class="kpi"><b id="kSeen">0</b><span>transacciones vistas</span><div class="clock"><i id="clock"></i></div></div>
+    <div class="kpi warn"><b id="kAl">0</b><span>alertas a revisar</span></div>
+    <div class="kpi good"><b id="kTp">0</b><span id="kTpL">fraudes atrapados</span></div>
+    <div class="kpi bad"><b id="kFn">0</b><span>fraudes que pasaron</span></div>
+    <div class="kpi"><b id="kPrec">—</b><span>alertas que eran fraude</span></div>
+    <div class="kpi good"><b id="kUsd">—</b><span>del dinero de fraude salvado</span></div>
+  </div>
+
+  <div class="main">
+    <section class="card"><h2>Transacciones entrando <span class="mono" id="hora" style="margin-left:auto;color:var(--ink)"></span></h2><div class="feed" id="feed"></div></section>
+    <section class="card"><h2>Cola de revisión <span id="qOrd" style="margin-left:auto;text-transform:none;letter-spacing:0;color:var(--mute)"></span></h2><div class="queue" id="queue"><p class="empty">Aún no hay alertas.</p></div></section>
+    <section class="card detail-col"><h2>Alerta seleccionada</h2><div class="det" id="det"><p class="empty">Elige una alerta de la cola para ver por qué se marcó.</p></div></section>
+  </div>
+
+  <section class="card" style="margin-top:16px">
+    <h2>El mismo día con los tres criterios, a la misma capacidad</h2>
+    <div class="cmp" id="cmp"></div>
+    <p style="color:var(--soft);font-size:13px;margin-top:12px" id="cmpTxt"></p>
+  </section>
+
+  <p class="note">Datos: transacciones reales del día <span id="nDia"></span> del mes de prueba de la competencia IEEE-CIS (Vesta), puntuadas por la regresión logística calibrada del proyecto. Los umbrales salen del mes de validación, así que la consola no mira el futuro. Las explicaciones y los casos parecidos son los del paso de cómputo cognitivo. Montos en dólares; la hora es relativa al inicio del día porque Vesta no publica la hora real.</p>
+</div>
+
+<script src="dia.js"></script>
+<script>
+"use strict";
+var D=window.DIA,TX=D.tx,$=function(i){return document.getElementById(i)};
+var CRIT=[["pe","Pérdida esperada","probabilidad × monto"],["prob","Probabilidad","más probable primero"],["monto","Monto","más caro primero"]];
+var SPEEDS=[["1×",240],["4×",960],["16×",3840]];
+var crit="pe",cap=0.035,speed=960,playing=true,t=0,idx=0,sel=null,last=performance.now(),opened={};
+var totalFraudUsd=TX.reduce(function(s,x){return x[4]?s+x[1]:s},0);
+function score(x,c){c=c||crit;return c==="prob"?x[3]:c==="pe"?x[3]*x[1]:x[1]}
+function thr(c,k){k=k||cap;return D.umbrales[String(Math.round(k*1000)/1000)][c]}
+function flagged(x,c,k){return score(x,c)>thr(c||crit,k)}
+function usd(n){return"$"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function hhmm(s){var h=Math.floor(s/3600),m=Math.floor(s%3600/60);return("0"+h).slice(-2)+":"+("0"+m).slice(-2)}
+function pct(a,b){return b?Math.round(100*a/b)+"%":"—"}
+$("subt").textContent="Día "+D.dia+" del mes de prueba · "+D.n.toLocaleString("es-MX")+" transacciones reales · "+D.fraudes+" fraudes";
+$("nDia").textContent=D.dia;
+
+function seg(box,items,cur,fn){box.innerHTML="";items.forEach(function(it){var b=document.createElement("button");b.type="button";b.textContent=it[1]||it[0];b.title=it[2]||"";b.setAttribute("aria-pressed",String(it[it.length===2?1:0]===cur||it[0]===cur));b.onclick=function(){fn(it);};box.appendChild(b)})}
+function drawCtl(){
+  seg($("crit"),CRIT,crit,function(it){crit=it[0];drawCtl();recompute()});
+  seg($("speed"),SPEEDS.map(function(s){return[s[0],s[0],"",s[1]]}),null,function(){});
+  [].forEach.call($("speed").children,function(b,i){b.setAttribute("aria-pressed",String(SPEEDS[i][1]===speed));b.onclick=function(){speed=SPEEDS[i][1];drawCtl()}});
+  $("capOut").textContent=(cap*100).toFixed(1).replace(".0","")+" %";
+  var al=TX.filter(function(x){return flagged(x)}).length;
+  $("capAn").textContent="≈ "+al+" alertas al día · "+Math.max(1,Math.ceil(al*10/480))+" analista(s)";
+  $("qOrd").textContent="ordenada por "+CRIT.filter(function(c){return c[0]===crit})[0][1].toLowerCase();
+}
+$("cap").oninput=function(){cap=+this.value/100;drawCtl();recompute()};
+
+function stats(n,c,k){var s={al:0,tp:0,fn:0,fp:0,usd:0,fusd:0};for(var i=0;i<n;i++){var x=TX[i],f=flagged(x,c,k);if(f)s.al++;if(x[4]){s.fusd+=x[1];if(f){s.tp++;s.usd+=x[1]}else s.fn++}else if(f)s.fp++}return s}
+function kpis(){
+  var s=stats(idx);$("kSeen").textContent=idx.toLocaleString("es-MX");$("kAl").textContent=s.al;$("kTp").textContent=s.tp;$("kFn").textContent=s.fn;
+  $("kPrec").textContent=pct(s.tp,s.al);$("kUsd").textContent=pct(s.usd,s.fusd);$("clock").style.width=(100*t/86400)+"%";$("hora").textContent=hhmm(Math.min(t,86399));
+}
+function feedRow(x){
+  var f=flagged(x),r=document.createElement("div");r.className="row"+(f?" flag":"");
+  r.innerHTML='<span class="t">'+hhmm(x[0])+'</span><div><span class="prod">'+x[2]+'</span>'+(f?'<b style="color:var(--rose2)">alerta</b>':'<span style="color:var(--soft)">aprobada</span>')+'<div class="bar"><i style="width:'+Math.max(2,x[3]*100)+'%"></i></div></div><span class="m">'+usd(x[1])+'</span>';
+  var fd=$("feed");fd.insertBefore(r,fd.firstChild);while(fd.children.length>14)fd.removeChild(fd.lastChild);
+}
+function queue(){
+  var al=[];for(var i=0;i<idx;i++)if(flagged(TX[i]))al.push(i);
+  al.sort(function(a,b){return score(TX[b])-score(TX[a])});
+  var q=$("queue");
+  if(!al.length){q.innerHTML='<p class="empty">Aún no hay alertas.</p>';return}
+  q.innerHTML="";al.slice(0,60).forEach(function(i){var x=TX[i],b=document.createElement("button");b.type="button";b.className="al"+(sel===i?" sel":"");
+    var st=opened[i]?(x[4]?'<span class="st f">fraude confirmado</span>':'<span class="st l">legítima</span>'):'<span class="st p">sin revisar</span>';
+    b.innerHTML='<b>'+usd(x[1])+' <span class="prod" style="margin-left:6px">'+x[2]+'</span></b><span class="pe">'+(crit==="prob"?"p = "+x[3].toFixed(2):crit==="pe"?"pérdida "+usd(x[3]*x[1]):"p = "+x[3].toFixed(2))+'</span>'+
+      '<p>'+(x[6].length?x[6][0][0]:"Marcada por el criterio, sin un rasgo aislado")+'</p>'+st;
+    b.onclick=function(){sel=i;opened[i]=true;queue();detail()};q.appendChild(b)});
+}
+function detail(){
+  if(sel===null)return;var x=TX[sel],o=opened[sel];
+  var cbr="";for(var k=0;k<7;k++)cbr+='<i class="'+(k<x[5]?"f":"")+'"></i>';
+  $("det").innerHTML='<h3>'+usd(x[1])+'</h3><div class="sub">Producto '+x[2]+' · llegó a las '+hhmm(x[0])+' (hora relativa)</div>'+
+    '<div class="meters"><div class="meter"><b>'+(x[3]*100).toFixed(1)+'%</b><span>probabilidad de fraude</span></div><div class="meter"><b>'+usd(x[3]*x[1])+'</b><span>pérdida esperada</span></div><div class="meter"><b>'+x[5]+' de 7</b><span>casos parecidos fueron fraude</span></div></div>'+
+    '<h2>Por qué se marcó</h2><div class="why">'+(x[6].length?x[6].map(function(r){return'<div><span>'+r[0][0].toUpperCase()+r[0].slice(1)+'</span><em>fraude ×'+r[1]+'</em></div>'}).join(""):'<div><span>Ningún rasgo aislado destaca: la alerta viene de la combinación de atributos'+(crit==="monto"?' o solo del monto':'')+'.</span><em>—</em></div>')+'</div>'+
+    '<h2>Casos parecidos ya resueltos</h2><div class="cbr" aria-label="'+x[5]+' de 7 fueron fraude">'+cbr+'</div><p style="font-size:12px;color:var(--soft)">Los 7 casos de entrenamiento más cercanos. Rojo = fraude confirmado.</p>'+
+    '<div class="verdict '+(x[4]?"f":"l")+'">'+(x[4]?"Resultado real: era fraude. Revisarla salvó "+usd(x[1])+".":"Resultado real: era legítima. Fue una falsa alarma: costó una revisión y una molestia al cliente.")+'</div>';
+}
+function compare(){
+  var box=$("cmp");box.innerHTML="";var all=CRIT.map(function(c){return[c,stats(TX.length,c[0])]});
+  var maxTp=Math.max.apply(null,all.map(function(a){return a[1].tp}))||1;
+  all.forEach(function(a){var c=a[0],s=a[1],d=document.createElement("div");d.className="cmpc"+(c[0]===crit?" on":"");
+    d.innerHTML='<h4>'+c[1]+' <span style="color:var(--mute);font-weight:500;font-size:12px">· '+c[2]+'</span></h4>'+
+    '<div class="hb"><span>Fraudes atrapados</span><div><i style="width:'+100*s.tp/D.fraudes+'%;background:var(--mint)"></i></div><b>'+s.tp+'/'+D.fraudes+'</b></div>'+
+    '<div class="hb"><span>Dinero salvado</span><div><i style="width:'+100*s.usd/totalFraudUsd+'%;background:var(--amber)"></i></div><b>'+pct(s.usd,totalFraudUsd)+'</b></div>'+
+    '<div class="hb"><span>Alertas que eran fraude</span><div><i style="width:'+(s.al?100*s.tp/s.al:0)+'%;background:var(--rose)"></i></div><b>'+pct(s.tp,s.al)+'</b></div>'+
+    '<div class="hb"><span>Falsas alarmas</span><div><i style="width:'+Math.min(100,s.fp/2)+'%;background:var(--soft)"></i></div><b>'+s.fp+'</b></div>';
+    box.appendChild(d)});
+  var b=all.slice().sort(function(a,b){return b[1].usd-a[1].usd})[0],m=all.slice().sort(function(a,b){return b[1].tp-a[1].tp})[0];
+  $("cmpTxt").textContent=(b===m?"Este día, ordenar por "+b[0][1].toLowerCase()+" gana en dinero salvado y en fraudes atrapados.":"Este día, ordenar por "+b[0][1].toLowerCase()+" salva más dinero y por "+m[0][1].toLowerCase()+" atrapa más fraudes.")+" En el mes completo de prueba, ordenar por pérdida esperada salvó 63% del dinero contra 42% por probabilidad: un solo día puede salir distinto, por eso se evalúa con el mes entero.";
+}
+function recompute(){kpis();queue();detail();compare()}
+function step(now){
+  var dt=Math.min(.1,(now-last)/1000);last=now;
+  if(playing&&t<86400){t+=dt*speed;var n=0;while(idx<TX.length&&TX[idx][0]<=t){feedRow(TX[idx]);idx++;n++}
+    if(n){kpis();if(TX.slice(idx-n,idx).some(function(x){return flagged(x)}))queue()} else kpis();
+    if(t>=86400){t=86400;idx=TX.length;kpis();queue();setPlay(false);$("liveTxt").textContent="Día terminado"}}
+  requestAnimationFrame(step);
+}
+function setPlay(p){playing=p;$("play").textContent=p?"⏸ Pausar":"▶ Reproducir";$("livePill").classList.toggle("paused",!p);if(p)$("liveTxt").textContent="En vivo desde Kafka";else if(t<86400)$("liveTxt").textContent="En pausa"}
+$("play").onclick=function(){if(t>=86400){restart();return}setPlay(!playing)};
+$("end").onclick=function(){t=86400;idx=TX.length;$("feed").innerHTML="";TX.slice(-14).forEach(feedRow);setPlay(false);$("liveTxt").textContent="Día terminado";recompute()};
+function restart(){t=0;idx=0;sel=null;opened={};$("feed").innerHTML="";$("det").innerHTML='<p class="empty">Elige una alerta de la cola para ver por qué se marcó.</p>';setPlay(true);recompute()}
+$("restart").onclick=restart;$("restart").setAttribute("aria-label","Reiniciar el día");
+if(matchMedia("(prefers-reduced-motion: reduce)").matches){$("end").onclick()}
+drawCtl();recompute();requestAnimationFrame(step);
+</script>
+</body>
+</html>
