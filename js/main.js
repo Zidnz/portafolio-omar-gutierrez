@@ -12,6 +12,7 @@ function onView(node,start,stop){if(!('IntersectionObserver'in window)){start();
 var fmt=function(n){return Math.round(n).toLocaleString('es-MX')};
 
 /* ================= CONTENIDO ================= */
+var APPL={fraude:['Abrir la mesa antifraude ↗'],qchaucoin:['Abrir la wallet simulada ↗'],observatorio:['Abrir el Observatorio ↗','Probar RedCare ↗'],milpin:['Abrir la demo de MILPÍN ↗']};
 var P=[
 {id:'fraude',n:'01',c:K.alert,cs:'rgba(196,86,107,.13)',kick:'Banca digital · 2026',title:'Detección de fraude en transacciones',
  sub:'El proyecto parte de 590,540 transacciones reales en un lakehouse con Spark, Kafka y PostgreSQL.',
@@ -49,11 +50,11 @@ var P=[
   ['Producto','De la ecuación a la parcela','API en FastAPI con 6 routers, mapa en Leaflet servido desde PostGIS, lista priorizada de parcelas por urgencia y comandos de voz en español. Desplegado en Netlify, Railway y Supabase.',null,'m-app']],
  gal:[['m-app','Diseño de la app: tablero, mapa, recomendación y configuración'],['m-kc','Curvas Kc por cultivo y etapa'],['m-balance','Balance hídrico de 60 días: humedad, ETc y riegos'],['m-pm','Penman-Monteith contra Hargreaves'],['m-shap','Importancia global y SHAP del modelo de consumo'],['m-leak','Efecto de la fuga de información en las métricas'],['m-dash','Tablero de métricas del modelo v4']],
  lim:'El motor FAO-56 es real; los datos de parcelas, clima e historial son sintéticos. Las métricas de los modelos todavía no dicen nada sobre un productor real. XGBoost está entrenado pero aún no conectado a la API, y el catálogo de cultivos es una decisión académica: en el DR-041 real predominan trigo, cártamo y garbanzo.',
- repo:['https://github.com/Zidnz/Milpin-pp26-v.1-','github.com/Zidnz/Milpin-pp26-v.1-'],sim:'milpin',simT:'Simulador: 60 días en una parcela',simH:'Elige cultivo, etapa y clima. La gráfica muestra cómo baja la humedad del suelo cada día y cuándo toca regar. Es la misma lógica del motor, con la ecuación de Hargreaves.'},
+ repo:['https://github.com/Zidnz/Milpin-pp26-v.1-','github.com/Zidnz/Milpin-pp26-v.1-'],app:'milpin/',sim:'milpin',simT:'Simulador: 60 días en una parcela',simH:'Elige cultivo, etapa y clima. La gráfica muestra cómo baja la humedad del suelo cada día y cuándo toca regar. Es la misma lógica del motor, con la ecuación de Hargreaves.'},
 
 {id:'observatorio',n:'03',c:K.vio,cs:'rgba(111,95,176,.14)',kick:'Política social · 2026, en curso',title:'Observatorio de la Economía del Cuidado',
  sub:'Datos para diseñar un programa de relevo por horas para quienes cuidan en casa, sin pago, a personas con discapacidad o adultas mayores.',
- chips:['Equipo de 3 · líder','ENASIC 2022','Censo 2020','Python + R','SQLite','HTML, CSS y JS'],cover:'o-home',app:'https://zidnz.github.io/pp26-2/Frontend/observatorio/',
+ chips:['Equipo de 3 · líder','ENASIC 2022','Censo 2020','Python + R','SQLite','HTML, CSS y JS'],cover:'o-home',app:['https://zidnz.github.io/pp26-2/Frontend/observatorio/','https://zidnz.github.io/pp26-2/Frontend/'],
  tldr:['El programa tendría cupo limitado. Hay que decidir a quién ofrecer primero el relevo y en qué zonas pilotear, y poder defender esa decisión con datos públicos.',
        'Integramos encuestas y censos en un almacén de indicadores, probamos si un modelo ordena mejor que una regla simple, tipificamos el territorio y lo publicamos en un observatorio web.',
        'Ningún modelo superó de forma demostrable a la regla de 40 horas de cuidado a la semana. Nos quedamos con la regla, que cualquiera puede entender.'],
@@ -183,7 +184,7 @@ P.forEach(function(p){var x=X[p.id];
   r.appendChild(el('div','tldr',['Jefe final: el problema','Estrategia: lo que hicimos','Botín: el resultado'].map(function(t,i){return '<div class="tl"><h4>'+t+'</h4><p>'+p.tldr[i]+'</p></div>'}).join('')));
   r.appendChild(el('h3','sec','Logros'));
   r.appendChild(el('div','kpis',p.kpis.map(function(k){return '<div class="kpi"><b class="num">'+k[0]+'</b><small>'+k[1]+'</small></div>'}).join('')));
-  r.appendChild(el('div','foot3','<div class="lim"><h4>Puntos débiles, dicho sin rodeos</h4><p>'+p.lim+'</p></div><div class="meta"><h4>Código</h4><p>Todo el código, los notebooks y la documentación están en el repositorio.</p><p style="margin-top:8px"><a href="'+p.repo[0]+'" target="_blank" rel="noopener noreferrer">'+p.repo[1]+'</a></p>'+(p.app?'<p style="margin-top:8px"><a href="'+p.app+'" target="_blank" rel="noopener">'+T(p.id==='fraude'?'Abrir la mesa antifraude ↗':p.id==='observatorio'?'Abrir el Observatorio ↗':'Abrir la wallet simulada ↗')+'</a></p>':'')+'</div>'));
+  r.appendChild(el('div','foot3','<div class="lim"><h4>Puntos débiles, dicho sin rodeos</h4><p>'+p.lim+'</p></div><div class="meta"><h4>Código</h4><p>Todo el código, los notebooks y la documentación están en el repositorio.</p><p style="margin-top:8px"><a href="'+p.repo[0]+'" target="_blank" rel="noopener noreferrer">'+p.repo[1]+'</a></p>'+(p.app?[].concat(p.app).map(function(u,k){return'<p style="margin-top:8px"><a href="'+u+'" target="_blank" rel="noopener">'+T(APPL[p.id][k])+'</a></p>'}).join(''):'')+'</div>'));
   var nx=el('div','cta');nx.innerHTML='<button class="pill go" type="button">Siguiente: recorrido →</button>';nx.firstChild.onclick=function(){open('rec')};r.appendChild(nx);
 
   /* 2 recorrido */

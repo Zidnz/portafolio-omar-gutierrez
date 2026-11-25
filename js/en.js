@@ -323,7 +323,7 @@ var EN_C=[
 var EN_SINGLE={'Modelos':'Models','Meta':'Goal','Datos':'Data','Producto':'Product','Pregunta':'Question','Fuentes':'Sources','Territorio':'Territory','Identidad':'Identity','Firma':'Signature','Bloques':'Blocks','Modelo':'Model','Analista':'Analyst','Registro':'Sign-up','Bloque':'Block','dimensiones':'dimensions','colecciones':'collections','vistas':'views','vista':'view','tabla':'table','estrella':'star','texto':'text'};
 
 /* Textos de la interfaz (coincidencia exacta con el texto en español) */
-var EN_UI={'Abrir el Observatorio ↗':'Open the Observatory ↗','Abrir la mesa antifraude ↗':'Open the fraud desk ↗','Abrir la wallet simulada ↗':'Open the simulated wallet ↗',
+var EN_UI={'Abrir la demo de MILPÍN ↗':'Open the MILPÍN demo ↗','Probar RedCare ↗':'Try RedCare ↗','Abrir el Observatorio ↗':'Open the Observatory ↗','Abrir la mesa antifraude ↗':'Open the fraud desk ↗','Abrir la wallet simulada ↗':'Open the simulated wallet ↗',
 'Inicio':'Home','01 Fraude':'01 Fraud','03 Observatorio':'03 Observatory','Claro':'Light','Oscuro':'Dark','7.º SEM':'7th SEM',
 'Datos que':'Data that','toman':'drives','decisiones':'decisions',
 'Estudiante de Ciencia de Datos para el Negocio en la UNRC y Data Analyst Intern en Veolia. Busco la historia escondida en los datos, la pruebo con rigor y la cuento para que cualquiera la entienda.':'Data Science for Business student at UNRC and Data Analyst Intern at Veolia. I look for the story hidden in the data, test it rigorously and tell it so anyone can understand it.',

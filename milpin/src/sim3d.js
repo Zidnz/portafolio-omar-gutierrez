@@ -1,0 +1,1954 @@
+/* ════════════════════════════════════════════════════════════════════
+   sim3d.js — Simulador 3D de parcela MILPÍN
+   ────────────────────────────────────────────────────────────────────
+   Simula un ciclo agrícola completo día a día sobre la geometría real
+   de la parcela (PostGIS → GeoJSON) y compara dos estrategias de riego
+   bajo el MISMO clima sintético determinista:
+
+     · Tradicional — calendario fijo por gravedad (práctica actual DR-041)
+     · MILPÍN      — riego por demanda FAO-56 (50% del agua disponible)
+
+   Motor agronómico: espejo cliente de backend/core/balance_hidrico.py
+     θ[t] = clamp(θ[t-1] + (lluvia + riego_neto − ETa)/(prof·10), PMP, CC)
+     Ks   = FAO-56 Ec. 84 (lineal entre umbral y PMP)
+     Ya   = Ymax·(1 − Ky·(1 − ΣETa/ΣETc))   ← FAO-33 (Doorenbos & Kassam)
+
+   Render: Three.js r147 (UMD, unpkg — mismo patrón CDN que Leaflet).
+   Se carga LAZY al abrir el simulador por primera vez, igual que
+   Whisper en el backend: cero costo en el arranque de la app.
+
+   API consumida:
+     GET /api/parcelas/{id}  → geom_geojson, CC, PMP, prof_raíz, sistema
+     GET /api/cultivos       → kc, etapas, ky_total, rendimiento_potencial
+   ════════════════════════════════════════════════════════════════════ */
+(function () {
+    "use strict";
+
+    const API = (typeof API_BASE !== "undefined")
+        ? API_BASE
+        : "https://milpin-pp26-v1-production.up.railway.app/api";
+
+    const THREE_CDN = "https://unpkg.com/three@0.147.0/build/three.min.js";
+    const ORBIT_CDN = "https://unpkg.com/three@0.147.0/examples/js/controls/OrbitControls.js";
+
+    // ── Constantes de negocio (mismas fuentes que el backend) ──────────
+    const TARIFA_M3_MXN = 1.68;   // CFE 9-CU, bombeo 80 m — baseline CLAUDE.md
+    const EFICIENCIA_RIEGO = {    // backend/core/balance_hidrico.py
+        gravedad: 0.65, aspersion: 0.80, microaspersion: 0.82, goteo: 0.90,
+    };
+
+    // Práctica tradicional DR-041: riegos de auxilio por calendario, gravedad.
+    // 100 mm brutos cada 14 días ≈ 8,000–9,000 m³/ha/ciclo (baseline del KPI).
+    const TRAD_INTERVALO_DIAS = 14;
+    const TRAD_LAMINA_BRUTA_MM = 100;
+    const TRAD_PRIMER_RIEGO_DIA = 7;
+    const TRAD_ULTIMO_RIEGO_MARGEN = 14; // no se riega en los últimos N días
+
+    // ── Catálogo fallback si /api/cultivos no responde ─────────────────
+    // Kc y etapas: espejo de KC_TABLE (FAO-56 Tabla 12).
+    // Ky: FAO-33 Tabla 24. Rendimiento potencial y precio: estimaciones
+    // DR-041 — solo para ilustrar el impacto económico, no son dato duro.
+    const CATALOGO_FALLBACK = {
+        maiz:    { kc: [0.30, 1.20, 0.60], etapas: [25, 40, 45, 30], ky: 1.25, rend: 12.0 },
+        frijol:  { kc: [0.40, 1.15, 0.35], etapas: [20, 30, 40, 20], ky: 1.15, rend: 2.6 },
+        algodon: { kc: [0.35, 1.20, 0.70], etapas: [30, 50, 55, 45], ky: 0.85, rend: 5.0 },
+        uva:     { kc: [0.30, 0.85, 0.45], etapas: [30, 60, 75, 50], ky: 0.85, rend: 20.0 },
+        chile:   { kc: [0.60, 1.05, 0.90], etapas: [30, 35, 40, 20], ky: 1.10, rend: 28.0 },
+    };
+    const PRECIO_TON_MXN = { maiz: 5800, frijol: 24000, algodon: 11500, uva: 26000, chile: 9500 };
+    const NOMBRE_CULTIVO = { maiz: "Maíz", frijol: "Frijol", algodon: "Algodón", uva: "Uva", chile: "Chile" };
+
+    // Altura máxima de la planta adulta (m, antes de escalar al espaciamiento)
+    const VISUAL_CULTIVO = {
+        maiz:    { hMax: 2.3 },
+        frijol:  { hMax: 0.6 },
+        algodon: { hMax: 1.25 },
+        uva:     { hMax: 1.8 },
+        chile:   { hMax: 0.9 },
+    };
+
+    /**
+     * Modelo de planta por cultivo como lista declarativa de "partes".
+     * Cada parte = 1 InstancedMesh (geometría compartida + material propio)
+     * con k offsets por planta, en coordenadas normalizadas:
+     *   p = [x·w, y·h, z·w]   s = [sx·w, sy·h, sz·w]   r = Euler (rad)
+     * (w = ancho adulto de copa, h = altura adulta de planta)
+     * Flags:
+     *   esFollaje    → el color se tiñe con estrés hídrico y senescencia
+     *   esFruto      → escala con la madurez (aparece de mediados en adelante);
+     *                  su sy se interpreta sobre w para mantener proporción
+     *   esEstructura → tamaño fijo todo el ciclo (postes de espaldera)
+     *   frutoMadura  → [colorInmaduro, colorMaduro] interpolado con la madurez
+     */
+    function _partesCultivo(key) {
+        const cil = new THREE.CylinderGeometry(0.4, 0.5, 1, 6);
+        const esf = new THREE.SphereGeometry(0.5, 8, 6);
+        const cono = new THREE.ConeGeometry(0.5, 1, 7);
+
+        switch (key) {
+            case "maiz": return [
+                { geo: cil, color: 0x4f8f3c, esFollaje: true, offsets: [
+                    { p: [0, 0.5, 0], s: [0.05, 1.0, 0.05] },
+                ]},
+                // Hojas: elipsoides muy aplanados, arqueados hacia afuera
+                { geo: esf, color: 0x2f8f46, esFollaje: true, offsets: [
+                    { p: [0.24, 0.35, 0],  s: [0.52, 0.05, 0.11], r: [0, 0, -0.45] },
+                    { p: [-0.24, 0.48, 0], s: [0.52, 0.05, 0.11], r: [0, 0, 0.45] },
+                    { p: [0, 0.6, 0.24],   s: [0.11, 0.05, 0.52], r: [0.45, 0, 0] },
+                    { p: [0, 0.72, -0.24], s: [0.11, 0.05, 0.52], r: [-0.45, 0, 0] },
+                ]},
+                // Espiga (floración) y mazorca pegada al tallo
+                { geo: cono, color: 0xd9c068, esFruto: true, offsets: [
+                    { p: [0, 1.06, 0], s: [0.07, 0.30, 0.07] },
+                ]},
+                { geo: esf, color: 0xe8c83c, esFruto: true, offsets: [
+                    { p: [0.08, 0.55, 0], s: [0.10, 0.20, 0.10], r: [0, 0, -0.25] },
+                ]},
+            ];
+
+            case "frijol": return [
+                { geo: esf, color: 0x3ba55d, esFollaje: true, offsets: [
+                    { p: [0, 0.5, 0],        s: [0.85, 0.75, 0.85] },
+                    { p: [0.18, 0.35, 0.12], s: [0.55, 0.5, 0.55] },
+                ]},
+                // Vainas colgantes en el borde exterior de la mata
+                { geo: cil, color: 0x86b958, esFruto: true, offsets: [
+                    { p: [0.44, 0.32, 0.14],   s: [0.035, 0.24, 0.035], r: [0, 0, 0.25] },
+                    { p: [-0.40, 0.28, -0.18], s: [0.035, 0.21, 0.035], r: [0.2, 0, 0] },
+                    { p: [0.10, 0.30, -0.45],  s: [0.035, 0.23, 0.035], r: [-0.25, 0, 0] },
+                ]},
+            ];
+
+            case "algodon": return [
+                { geo: cil, color: 0x6b4a2f, offsets: [
+                    { p: [0, 0.22, 0], s: [0.05, 0.45, 0.05] },
+                ]},
+                { geo: esf, color: 0x4f9e5f, esFollaje: true, offsets: [
+                    { p: [0, 0.6, 0], s: [0.9, 0.75, 0.9] },
+                ]},
+                // Cápsulas abiertas en la superficie de la copa, hacia el final
+                { geo: esf, color: 0xf2efe6, esFruto: true, offsets: [
+                    { p: [0.40, 0.74, 0.20],   s: [0.14, 0.14, 0.14] },
+                    { p: [-0.36, 0.60, 0.28],  s: [0.13, 0.13, 0.13] },
+                    { p: [0.14, 0.92, -0.26],  s: [0.14, 0.14, 0.14] },
+                    { p: [-0.26, 0.86, -0.18], s: [0.12, 0.12, 0.12] },
+                    { p: [0.44, 0.50, -0.12],  s: [0.13, 0.13, 0.13] },
+                ]},
+            ];
+
+            case "uva": return [
+                // Poste de espaldera: presente todo el ciclo, no crece
+                { geo: cil, color: 0x8a7a64, esEstructura: true, offsets: [
+                    { p: [0.35, 0.5, 0], s: [0.025, 1.0, 0.025] },
+                ]},
+                { geo: cil, color: 0x5d4126, offsets: [
+                    { p: [0, 0.28, 0], s: [0.09, 0.55, 0.09], r: [0, 0, 0.12] },
+                ]},
+                { geo: esf, color: 0x3e7d3a, esFollaje: true, offsets: [
+                    { p: [0, 0.78, 0], s: [1.15, 0.5, 0.85] },
+                ]},
+                // Racimos colgando bajo la copa
+                { geo: esf, color: 0x5b2d7e, esFruto: true, offsets: [
+                    { p: [0.26, 0.46, 0.16],   s: [0.13, 0.22, 0.13] },
+                    { p: [-0.30, 0.48, -0.10], s: [0.11, 0.19, 0.11] },
+                ]},
+            ];
+
+            case "chile": default: return [
+                { geo: esf, color: 0x2e8b57, esFollaje: true, offsets: [
+                    { p: [0, 0.5, 0],         s: [0.9, 0.85, 0.9] },
+                    { p: [-0.15, 0.38, 0.14], s: [0.55, 0.55, 0.55] },
+                ]},
+                // Chiles colgantes (cono punta abajo) en el borde de la mata;
+                // viran de verde a rojo al madurar
+                { geo: cono, color: 0x4caf50, esFruto: true,
+                  frutoMadura: [0x4caf50, 0xd63a2f], offsets: [
+                    { p: [0.46, 0.36, 0.16],   s: [0.06, 0.24, 0.06], r: [Math.PI, 0, 0] },
+                    { p: [-0.42, 0.32, -0.18], s: [0.06, 0.21, 0.06], r: [Math.PI, 0, 0.2] },
+                    { p: [0.12, 0.28, -0.46],  s: [0.06, 0.22, 0.06], r: [Math.PI, 0.4, 0] },
+                    { p: [-0.10, 0.40, 0.44],  s: [0.06, 0.20, 0.06], r: [Math.PI, 0, -0.2] },
+                ]},
+            ];
+        }
+    }
+
+    // ── Estado del módulo ───────────────────────────────────────────────
+    let _threeListo = false;
+    let _catalogoAPI = null;          // cache de /api/cultivos
+    let _overlay = null;              // raíz DOM
+    let _scene, _camera, _renderer, _controls, _rafId = null;
+    let _campo = null;                // { sueloMesh, aguaMesh, plantas, frutos, ... }
+    let _sim = null;                  // { clima, res: {id → sim}, ciclo, cfg }
+    let _escenario = "fao56";         // sistema que se ve en 3D
+    let _chart = null;                // Chart.js comparativo (lazy)
+    let _chartMetrica = "theta";      // 'theta' | 'agua' | 'ks'
+    let _diaActual = 0;
+    let _reproduciendo = false;
+    let _velocidad = 3;               // días por segundo
+    let _acumulador = 0;
+    let _relojPrev = null;
+    let _aguaOpacidad = 0;
+    let _ultimoG = -1;                // growth aplicado a las matrices
+    let _ultimaMad = -1;              // madurez de fruto aplicada
+    let _camTween = null;             // transición suave entre vistas de cámara
+    let _v3Tmp = null;                // Vector3 reusado (proyección sensor→pantalla)
+
+    // ════════════════════════════════════════════════════════════════
+    //  UTILIDADES
+    // ════════════════════════════════════════════════════════════════
+
+    function _normalizar(nombre) {
+        return (nombre || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+    }
+
+    // PRNG determinista (mulberry32): mismo clima para ambos escenarios
+    // y reproducible entre sesiones → la comparación es justa.
+    function _mulberry32(semilla) {
+        let a = semilla >>> 0;
+        return function () {
+            a |= 0; a = (a + 0x6D2B79F5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    function _hashStr(s) {
+        let h = 2166136261;
+        for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+        return h >>> 0;
+    }
+
+    function _cargarScript(src) {
+        return new Promise((ok, err) => {
+            const tag = document.createElement("script");
+            tag.src = src;
+            tag.onload = ok;
+            tag.onerror = () => err(new Error("No se pudo cargar " + src));
+            document.head.appendChild(tag);
+        });
+    }
+
+    async function _asegurarThree() {
+        if (_threeListo) return;
+        if (typeof THREE === "undefined") await _cargarScript(THREE_CDN);
+        if (typeof THREE.OrbitControls === "undefined") await _cargarScript(ORBIT_CDN);
+        _threeListo = true;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  DATOS — parcela y catálogo de cultivos
+    // ════════════════════════════════════════════════════════════════
+
+    async function _obtenerParcela(idParcela) {
+        if (!idParcela) return null;
+        try {
+            const res = await fetch(`${API}/parcelas/${idParcela}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.json();
+        } catch (e) {
+            console.warn("[SIM3D] No se pudo cargar la parcela:", e.message);
+            return null;
+        }
+    }
+
+    async function _obtenerCatalogo() {
+        if (_catalogoAPI) return _catalogoAPI;
+        try {
+            const res = await fetch(`${API}/cultivos`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const lista = await res.json();
+            const mapa = {};
+            lista.forEach(c => {
+                mapa[_normalizar(c.nombre_comun)] = {
+                    kc: [Number(c.kc_inicial), Number(c.kc_medio), Number(c.kc_final)],
+                    etapas: [c.dias_etapa_inicial, c.dias_etapa_desarrollo,
+                             c.dias_etapa_media, c.dias_etapa_final],
+                    ky: Number(c.ky_total),
+                    rend: c.rendimiento_potencial_ton != null
+                        ? Number(c.rendimiento_potencial_ton)
+                        : (CATALOGO_FALLBACK[_normalizar(c.nombre_comun)]?.rend ?? 10),
+                };
+            });
+            if (Object.keys(mapa).length) { _catalogoAPI = mapa; return mapa; }
+        } catch (e) {
+            console.warn("[SIM3D] /api/cultivos no disponible, uso catálogo local:", e.message);
+        }
+        return CATALOGO_FALLBACK;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  MOTOR AGRONÓMICO (espejo de balance_hidrico.py)
+    // ════════════════════════════════════════════════════════════════
+
+    // Kc por interpolación lineal en 4 etapas — idéntico a obtener_kc()
+    function _kcDia(cat, d) {
+        const [kIni, kMed, kFin] = cat.kc;
+        const [dIni, dDes, dMed, dFin] = cat.etapas;
+        const finIni = dIni, finDes = finIni + dDes, finMed = finDes + dMed, finFin = finMed + dFin;
+        if (d <= finIni) return kIni;
+        if (d <= finDes) return kIni + (kMed - kIni) * ((d - finIni) / dDes);
+        if (d <= finMed) return kMed;
+        if (d <= finFin) return kMed + (kFin - kMed) * ((d - finMed) / dFin);
+        return kFin;
+    }
+
+    function _etapaDia(cat, d) {
+        const [dIni, dDes, dMed] = cat.etapas;
+        if (d <= dIni) return "Inicial";
+        if (d <= dIni + dDes) return "Desarrollo";
+        if (d <= dIni + dDes + dMed) return "Mediados";
+        return "Final · maduración";
+    }
+
+    // Clima sintético del Valle del Yaqui: ETo estacional senoidal
+    // (~2.4 mm/d invierno, ~7.4 mm/d junio) + lluvia tipo monzón jul–sep.
+    // Sustituible por clima_diario real cuando exista endpoint de serie.
+    function _generarClima(fechaSiembra, dias, semilla) {
+        const rnd = _mulberry32(semilla);
+        const clima = [];
+        const inicio = new Date(fechaSiembra.getTime());
+        for (let i = 0; i < dias; i++) {
+            const f = new Date(inicio.getTime() + i * 86400000);
+            const doy = Math.floor((f - new Date(f.getFullYear(), 0, 0)) / 86400000);
+            let eto = 4.9 + 2.5 * Math.sin(2 * Math.PI * (doy - 81) / 365) + (rnd() - 0.5);
+            eto = Math.max(1.2, eto);
+            const monzon = doy >= 185 && doy <= 260;
+            const pLluvia = monzon ? 0.20 : 0.03;
+            let lluvia = 0;
+            if (rnd() < pLluvia) {
+                lluvia = Math.min(45, -(monzon ? 8 : 4) * Math.log(Math.max(1e-6, rnd())));
+            }
+            // T/HR/viento sintéticos coherentes con la estación del Yaqui:
+            // los leen los sensores 3D y la estación meteorológica al clic
+            const t = 21 + 9.5 * Math.sin(2 * Math.PI * (doy - 81) / 365) + (rnd() - 0.5) * 3;
+            const hr = Math.max(20, Math.min(90, 80 - eto * 6 + (rnd() - 0.5) * 12));
+            clima.push({
+                fecha: f, eto: +eto.toFixed(2), lluvia: +lluvia.toFixed(1),
+                t: +t.toFixed(1), hr: Math.round(hr), viento: +(1.5 + rnd() * 2.8).toFixed(1),
+            });
+        }
+        return clima;
+    }
+
+    /**
+     * Simula un ciclo completo con una estrategia de riego.
+     * estrategia(dia, thetaPct, ctx) → lámina BRUTA mm a aplicar hoy (0 = no riega).
+     * El agua útil es bruta·eficiencia; lo que excede CC se pierde
+     * (escurrimiento/percolación) pero SÍ se contabiliza como aplicada —
+     * ahí vive el desperdicio del riego por calendario.
+     */
+    function _simularEstrategia(cat, clima, suelo, eficiencia, estrategia) {
+        const { ccPct, pmpPct, profM } = suelo;
+        const umbral = pmpPct + 0.5 * (ccPct - pmpPct);   // 50% ADT (FAO-56)
+        const dias = [];
+        let theta = ccPct;            // siembra con suelo a capacidad de campo
+        let etaSum = 0, etcSum = 0, aguaBruta = 0, nRiegos = 0, diasEstres = 0;
+
+        for (let i = 0; i < clima.length; i++) {
+            const d = i + 1;
+            const kc = _kcDia(cat, d);
+            const etc = clima[i].eto * kc;
+
+            // 1) Decisión de riego en la mañana, con la humedad de ayer
+            const bruta = estrategia(d, theta, { umbral, ccPct, pmpPct, profM, clima });
+            let netaUtil = 0;
+            if (bruta > 0) {
+                const netaDisponible = bruta * eficiencia;
+                const capacidadMm = (ccPct - theta) * profM * 10;
+                netaUtil = Math.min(netaDisponible, Math.max(0, capacidadMm));
+                aguaBruta += bruta;
+                nRiegos += 1;
+            }
+            theta = Math.min(ccPct, theta + netaUtil / (profM * 10));
+
+            // 2) Consumo del día: Ks lineal FAO-56 Ec. 84 (p = 0.5)
+            const ks = theta >= umbral ? 1 : Math.max(0, (theta - pmpPct) / (umbral - pmpPct));
+            const eta = etc * ks;
+            if (ks < 0.95) diasEstres += 1;
+
+            // 3) Balance: lluvia entra, ETa sale, clamp [PMP, CC]
+            theta += (clima[i].lluvia - eta) / (profM * 10);
+            theta = Math.max(pmpPct, Math.min(ccPct, theta));
+
+            etaSum += eta; etcSum += etc;
+            dias.push({
+                dia: d, fecha: clima[i].fecha, kc: +kc.toFixed(2),
+                eto: clima[i].eto, etc: +etc.toFixed(2), lluvia: clima[i].lluvia,
+                t: clima[i].t, hr: clima[i].hr, viento: clima[i].viento,
+                riegoBruto: bruta, ks: +ks.toFixed(3), theta: +theta.toFixed(3),
+                etapa: _etapaDia(cat, d),
+            });
+        }
+
+        // FAO-33: Ya/Ymax = 1 − Ky·(1 − ETa/ETc)
+        const relEt = etcSum > 0 ? etaSum / etcSum : 1;
+        const fraccionRend = Math.max(0, 1 - cat.ky * (1 - relEt));
+        const volumenM3Ha = aguaBruta * 10;              // 1 mm = 10 m³/ha
+
+        return {
+            dias,
+            totales: {
+                aguaBrutaMm: +aguaBruta.toFixed(0),
+                volumenM3Ha: +volumenM3Ha.toFixed(0),
+                nRiegos,
+                diasEstres,
+                relEt: +relEt.toFixed(3),
+                fraccionRend: +fraccionRend.toFixed(3),
+                rendTonHa: +(cat.rend * fraccionRend).toFixed(2),
+                costoAguaMxnHa: +(volumenM3Ha * TARIFA_M3_MXN).toFixed(0),
+            },
+        };
+    }
+
+    // ── Sistemas de recomendación comparables en el simulador ──────────
+    // Espejo conceptual de los motores reales del repo:
+    //   tradicional → práctica actual DR-041 (baseline, sin recomendador)
+    //   fao56       → riego_api: balance hídrico, umbral fijo 50% ADT
+    //   xgboost     → ml_api: política por etapa fenológica (el modelo
+    //                 aprende cuánto agotamiento tolera cada etapa) con
+    //                 llenado parcial a 90% CC para aprovechar lluvias
+    const SISTEMAS = [
+        { id: "tradicional", nombre: "Tradicional", color: "#E65C5C",
+          desc: "Calendario fijo por gravedad" },
+        { id: "fao56", nombre: "FAO-56", color: "#43B36B",
+          desc: "Riego por demanda · umbral 50% ADT" },
+        { id: "xgboost", nombre: "ML XGBoost", color: "#7B2FBE",
+          desc: "Umbral por etapa fenológica · llenado 90% CC" },
+    ];
+
+    function _correrComparativa(cfg) {
+        const cat = cfg.cat;
+        const ciclo = cat.etapas.reduce((a, b) => a + b, 0);
+        const semilla = _hashStr((cfg.idParcela || "demo") + cfg.fechaSiembra.toISOString().slice(0, 10));
+        const clima = _generarClima(cfg.fechaSiembra, ciclo, semilla);
+        const suelo = { ccPct: cfg.ccPct, pmpPct: cfg.pmpPct, profM: cfg.profM };
+        const ef = EFICIENCIA_RIEGO[cfg.sistema] ?? 0.75;
+
+        const res = {};
+
+        // Tradicional: calendario fijo, siempre gravedad (práctica actual)
+        res.tradicional = _simularEstrategia(cat, clima, suelo, EFICIENCIA_RIEGO.gravedad,
+            (d) => {
+                const ultimo = ciclo - TRAD_ULTIMO_RIEGO_MARGEN;
+                if (d >= TRAD_PRIMER_RIEGO_DIA && d <= ultimo &&
+                    (d - TRAD_PRIMER_RIEGO_DIA) % TRAD_INTERVALO_DIAS === 0) {
+                    return TRAD_LAMINA_BRUTA_MM;
+                }
+                return 0;
+            });
+
+        // FAO-56: riega al cruzar el umbral (p=0.5), la lámina justa hasta CC
+        res.fao56 = _simularEstrategia(cat, clima, suelo, ef,
+            (d, theta, ctx) => {
+                if (theta > ctx.umbral) return 0;
+                return (ctx.ccPct - theta) * ctx.profM * 10 / ef;
+            });
+
+        // ML XGBoost: fracción de agotamiento permitida (p) aprendida por
+        // etapa — protege mediados (floración/llenado, p=0.40) y tolera más
+        // en etapas poco sensibles (inicial 0.65, final 0.55). Llena solo a
+        // 90% de CC (deja espacio para lluvia) y aplica corte de agua
+        // pre-cosecha: sin riegos en los últimos 12 días del ciclo.
+        const [dIni, dDes, dMed] = cat.etapas;
+        res.xgboost = _simularEstrategia(cat, clima, suelo, ef,
+            (d, theta, ctx) => {
+                if (d > ciclo - 12) return 0;          // corte pre-cosecha
+                const p = d <= dIni ? 0.65
+                    : d <= dIni + dDes ? 0.50
+                    : d <= dIni + dDes + dMed ? 0.40
+                    : 0.55;
+                const umbralEtapa = ctx.ccPct - p * (ctx.ccPct - ctx.pmpPct);
+                if (theta > umbralEtapa) return 0;
+                const objetivo = ctx.pmpPct + 0.90 * (ctx.ccPct - ctx.pmpPct);
+                return Math.max(0, objetivo - theta) * ctx.profM * 10 / ef;
+            });
+
+        return { clima, res, ciclo, cfg };
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  GEOMETRÍA — GeoJSON (lon/lat) → metros locales
+    // ════════════════════════════════════════════════════════════════
+
+    function _anilloAMetros(anillo) {
+        // Proyección equirectangular local: suficiente para lotes < 2 km
+        let lon0 = 0, lat0 = 0;
+        anillo.forEach(c => { lon0 += c[0]; lat0 += c[1]; });
+        lon0 /= anillo.length; lat0 /= anillo.length;
+        const kx = 111320 * Math.cos(lat0 * Math.PI / 180);
+        const kz = 110540;
+        return anillo.map(c => [(c[0] - lon0) * kx, -(c[1] - lat0) * kz]); // -z = norte arriba
+    }
+
+    function _poligonoDeParcela(parcela) {
+        const g = parcela?.geom_geojson;
+        let anillo = null;
+        if (g?.type === "Polygon") anillo = g.coordinates?.[0];
+        else if (g?.type === "MultiPolygon") anillo = g.coordinates?.[0]?.[0];
+        if (anillo && anillo.length >= 4) return _anilloAMetros(anillo);
+
+        // Fallback: rectángulo con el área real de la parcela (o 10 ha demo)
+        const areaHa = Number(parcela?.area_ha) || 10;
+        const lado = Math.sqrt(areaHa * 10000);
+        const w = lado * 1.4, h = (areaHa * 10000) / w;
+        return [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2], [-w / 2, -h / 2]];
+    }
+
+    function _puntoEnPoligono(x, z, pts) {
+        let dentro = false;
+        for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+            const xi = pts[i][0], zi = pts[i][1], xj = pts[j][0], zj = pts[j][1];
+            if (((zi > z) !== (zj > z)) && (x < (xj - xi) * (z - zi) / (zj - zi) + xi)) {
+                dentro = !dentro;
+            }
+        }
+        return dentro;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  ESCENA THREE.JS
+    // ════════════════════════════════════════════════════════════════
+
+    const ALTURA_SUELO = 1.4;
+
+    // Perfil del subsuelo (diorama). Profundidades base simbólicas que se
+    // escalan al tamaño del lote en _crearEscena — un corte de 7 m junto a
+    // un campo de 400 m sería una línea invisible.
+    const PROF_ARABLE = 2.2;
+    const PROF_RAICES = 2.4;
+    const PROF_ACUIFERO = 2.8;
+
+    // Rampa del heatmap de humedad: f = (θ−PMP)/(CC−PMP)
+    //   🔴 estrés → 🟡 déficit → 🟢 óptimo → 🔵 alta humedad
+    const _RAMPA_HUM = [
+        [0.00, 0xc2, 0x3a, 0x2e],
+        [0.32, 0xd8, 0xb8, 0x32],
+        [0.55, 0x3f, 0x9b, 0x4f],
+        [0.78, 0x3f, 0x9b, 0x4f],
+        [1.00, 0x2f, 0x7f, 0xc1],
+    ];
+
+    function _colorHumedad(f) {
+        f = Math.max(0, Math.min(1, f));
+        for (let i = 1; i < _RAMPA_HUM.length; i++) {
+            if (f <= _RAMPA_HUM[i][0]) {
+                const [f0, r0, g0, b0] = _RAMPA_HUM[i - 1];
+                const [f1, r1, g1, b1] = _RAMPA_HUM[i];
+                const k = (f - f0) / Math.max(1e-6, f1 - f0);
+                return [r0 + (r1 - r0) * k, g0 + (g1 - g0) * k, b0 + (b1 - b0) * k];
+            }
+        }
+        return [_RAMPA_HUM[4][1], _RAMPA_HUM[4][2], _RAMPA_HUM[4][3]];
+    }
+
+    // Heterogeneidad espacial del suelo: value noise suave y determinista
+    // (misma semilla → mismo patrón). Representa variación de textura/CE
+    // dentro del lote; la media sigue el θ del balance hídrico del día.
+    function _crearRuidoCampo(semilla) {
+        const rnd = _mulberry32(semilla);
+        const g = 8;
+        const grid = Array.from({ length: (g + 1) * (g + 1) }, () => rnd() * 2 - 1);
+        const en = (x, y) => grid[Math.min(y, g) * (g + 1) + Math.min(x, g)];
+        return (u, v) => {
+            const x = u * g, y = v * g;
+            const x0 = Math.floor(x), y0 = Math.floor(y);
+            const fx = x - x0, fy = y - y0;
+            const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+            const a = en(x0, y0) * (1 - sx) + en(x0 + 1, y0) * sx;
+            const b = en(x0, y0 + 1) * (1 - sx) + en(x0 + 1, y0 + 1) * sx;
+            return a * (1 - sy) + b * sy;
+        };
+    }
+
+    /**
+     * Infraestructura y efectos de agua propios de cada sistema de riego
+     * (escenario MILPÍN). El equipo es visible todo el ciclo; los efectos
+     * (fxMats) son materiales transparentes cuya opacidad pulsa al regar.
+     *   gravedad       → sin equipo: lámina de inundación (aguaMesh)
+     *   goteo          → cinta por hilera + bulbos de mojado por planta
+     *   aspersion      → cañones altos + cono de rociado translúcido
+     *   microaspersion → estacas bajas + rociado circular + bulbos
+     * Devuelve { equipo: [Mesh], fxMats: [{ mat, max }] } ya agregados a _scene.
+     */
+    function _construirInfraRiego(sistema, posiciones, paso, poligono, lim, escAltura, hMaxCultivo) {
+        const equipo = [];
+        const fxMats = [];
+        const y0 = ALTURA_SUELO;
+        const m = new THREE.Matrix4();
+        const Q_ID = new THREE.Quaternion();
+        const Q_TUMBADO = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0));
+        const Q_PLANO = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
+        const Q_INVERTIDO = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI, 0, 0));
+        const v = new THREE.Vector3();
+        const e = new THREE.Vector3();
+
+        const instanciar = (geo, mat, items) => {
+            const mesh = new THREE.InstancedMesh(geo, mat, items.length);
+            items.forEach((it, i) => {
+                m.compose(v.set(it.x, it.y, it.z), it.q || Q_ID, e.set(it.sx, it.sy, it.sz));
+                mesh.setMatrixAt(i, m);
+            });
+            _scene.add(mesh);
+            return mesh;
+        };
+
+        // Bulbos de mojado bajo cada planta (goteo y microaspersión)
+        if (sistema === "goteo" || sistema === "microaspersion") {
+            const matBulbo = new THREE.MeshBasicMaterial({
+                color: 0x2e5d8a, transparent: true, opacity: 0, depthWrite: false });
+            const r = paso * (sistema === "goteo" ? 0.30 : 0.42);
+            equipo.push(instanciar(
+                new THREE.CircleGeometry(1, 10), matBulbo,
+                posiciones.map(p => ({ x: p.x, y: y0 + 0.06, z: p.z, q: Q_PLANO, sx: r, sy: r, sz: 1 }))));
+            fxMats.push({ mat: matBulbo, max: 0.65 });
+        }
+
+        if (sistema === "goteo") {
+            // Una cinta de goteo por hilera (las hileras corren a lo largo de z).
+            // La clave se ancla al origen del grid: el jitter en x (±12% del
+            // paso) no puede partir una hilera en dos cintas.
+            const x0 = lim.minX + paso / 2;
+            const hileras = new Map();
+            posiciones.forEach(p => {
+                const clave = Math.round((p.x - x0) / paso);
+                const h = hileras.get(clave) || { x: x0 + clave * paso, minZ: Infinity, maxZ: -Infinity };
+                h.minZ = Math.min(h.minZ, p.z); h.maxZ = Math.max(h.maxZ, p.z);
+                hileras.set(clave, h);
+            });
+            const grosor = Math.max(0.08, paso * 0.035);
+            equipo.push(instanciar(
+                new THREE.CylinderGeometry(0.5, 0.5, 1, 6),
+                new THREE.MeshLambertMaterial({ color: 0x221b13 }),
+                [...hileras.values()].map(h => ({
+                    x: h.x, y: y0 + grosor, z: (h.minZ + h.maxZ) / 2, q: Q_TUMBADO,
+                    sx: grosor * 2, sy: h.maxZ - h.minZ + paso * 0.6, sz: grosor * 2,
+                }))));
+        }
+
+        if (sistema === "aspersion" || sistema === "microaspersion") {
+            const esMicro = sistema === "microaspersion";
+            // Aspersión: cañones altos cada ~3.5 pasos; micro: estaca por 2 plantas
+            let puntos;
+            const hEquipo = esMicro
+                ? 0.4 + paso * 0.08
+                : hMaxCultivo * escAltura * 1.25;
+            if (esMicro) {
+                puntos = posiciones.filter((_, i) => i % 2 === 0)
+                    .map(p => ({ x: p.x + paso * 0.4, z: p.z }));
+            } else {
+                puntos = [];
+                const sep = paso * 3.5;
+                for (let x = lim.minX + sep / 2; x < lim.maxX; x += sep) {
+                    for (let z = lim.minZ + sep / 2; z < lim.maxZ; z += sep) {
+                        if (_puntoEnPoligono(x, z, poligono)) puntos.push({ x, z });
+                    }
+                }
+            }
+            const grosorPoste = esMicro ? 0.06 : Math.max(0.12, paso * 0.04);
+            equipo.push(instanciar(
+                new THREE.CylinderGeometry(0.5, 0.5, 1, 6),
+                new THREE.MeshLambertMaterial({ color: esMicro ? 0x2a2a2a : 0x9aa3ab }),
+                puntos.map(p => ({
+                    x: p.x, y: y0 + hEquipo / 2, z: p.z,
+                    sx: grosorPoste * 2, sy: hEquipo, sz: grosorPoste * 2,
+                }))));
+            // Cabezal
+            equipo.push(instanciar(
+                new THREE.SphereGeometry(0.5, 6, 5),
+                new THREE.MeshLambertMaterial({ color: esMicro ? 0xe07b2a : 0x4d565e }),
+                puntos.map(p => ({
+                    x: p.x, y: y0 + hEquipo, z: p.z,
+                    sx: grosorPoste * 4, sy: grosorPoste * 4, sz: grosorPoste * 4,
+                }))));
+            // Cono / disco de rociado translúcido (FX)
+            const matRociado = new THREE.MeshBasicMaterial({
+                color: 0x9fd4f5, transparent: true, opacity: 0,
+                depthWrite: false, side: THREE.DoubleSide });
+            const rRociado = esMicro ? paso * 0.85 : paso * 1.8;
+            const hRociado = esMicro ? hEquipo * 0.9 : hEquipo;
+            equipo.push(instanciar(
+                new THREE.ConeGeometry(1, 1, 12, 1, true), matRociado,
+                puntos.map(p => ({
+                    x: p.x, y: y0 + hEquipo - hRociado / 2, z: p.z, q: Q_INVERTIDO,
+                    sx: rRociado, sy: hRociado, sz: rRociado,
+                }))));
+            fxMats.push({ mat: matRociado, max: esMicro ? 0.35 : 0.30 });
+        }
+
+        return { equipo, fxMats };
+    }
+
+    // Aplica el pulso de agua al efecto del sistema activo en el 3D.
+    // El escenario Tradicional siempre se ve como gravedad (lámina).
+    function _aplicarOpacidadFX(op) {
+        if (!_campo || !_sim) return;
+        const sistema = _escenario === "tradicional" ? "gravedad" : _sim.cfg.sistema;
+        const laminaMax = sistema === "gravedad" ? 0.55
+            : sistema === "aspersion" ? 0.12 : 0;   // aspersión moja parejo, leve
+        _campo.aguaMesh.material.opacity = Math.min(laminaMax, op);
+        const moderno = _escenario !== "tradicional";
+        _campo.fxMats.forEach(f => {
+            f.mat.opacity = moderno ? Math.min(f.max, op * (f.max / 0.55)) : 0;
+        });
+
+        // Frente de infiltración: desciende de la superficie a la zona de
+        // raíces conforme el pulso decae (el agua "entra" al perfil)
+        if (_campo.frenteInfiltra && _campo.perfil) {
+            const prog = 1 - Math.min(1, op / 0.55);
+            const { arable, raices } = _campo.perfil;
+            _campo.frenteInfiltra.position.y =
+                ALTURA_SUELO - 0.05 * arable - prog * (arable + raices * 0.8);
+            _campo.frenteInfiltra.material.opacity = Math.min(0.5, op);
+        }
+    }
+
+    /**
+     * Red de sensores MILPÍN: 5 sensores de humedad (caja blanca con
+     * letrero, poste corto y dos varillas que entran al suelo) repartidos
+     * por el lote + 1 estación meteorológica al centro (mástil, panel
+     * solar, anemómetro giratorio, pluviómetro y escudo T°/HR).
+     * Escala proporcional al espaciamiento de plantas, como todo el campo.
+     * Devuelve { grupos, anemometro } — los grupos son clicables (popup).
+     */
+    function _construirSensores(posiciones, paso, lim, escAltura, hMaxCultivo, cx, cz) {
+        const f = paso;
+        const matBlanco = new THREE.MeshLambertMaterial({ color: 0xf2f2ee });
+        const matVarilla = new THREE.MeshLambertMaterial({ color: 0x565b62 });
+        const matMastil = new THREE.MeshLambertMaterial({ color: 0xb9c0c7 });
+        const grupos = [];
+
+        // Letrero MILPIN para la cara frontal de la caja del sensor
+        const cv = document.createElement("canvas");
+        cv.width = 128; cv.height = 64;
+        const c2 = cv.getContext("2d");
+        c2.fillStyle = "#f2f2ee"; c2.fillRect(0, 0, 128, 64);
+        c2.fillStyle = "#0F6CBD";
+        c2.font = "700 26px Poppins, sans-serif";
+        c2.textAlign = "center"; c2.textBaseline = "middle";
+        c2.fillText("MILPIN", 64, 33);
+        const matLetrero = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv) });
+
+        // ── 5 sensores esparcidos (índices espaciados del grid de plantas) ──
+        const n = posiciones.length;
+        [0.08, 0.28, 0.50, 0.72, 0.92].forEach((k, i) => {
+            const p = posiciones[Math.min(n - 1, Math.floor(n * k))];
+            const g = new THREE.Group();
+            g.position.set(p.x + paso * 0.45, ALTURA_SUELO, p.z + paso * 0.3);
+
+            const hPoste = f * 0.30;
+            const poste = new THREE.Mesh(
+                new THREE.CylinderGeometry(f * 0.012, f * 0.012, hPoste, 6), matVarilla);
+            poste.position.y = hPoste / 2;
+            const caja = new THREE.Mesh(
+                new THREE.BoxGeometry(f * 0.16, f * 0.10, f * 0.05), matBlanco);
+            caja.position.y = hPoste + f * 0.05;
+            const letrero = new THREE.Mesh(
+                new THREE.PlaneGeometry(f * 0.14, f * 0.08), matLetrero);
+            letrero.position.set(0, hPoste + f * 0.05, f * 0.026);
+            const antena = new THREE.Mesh(
+                new THREE.CylinderGeometry(f * 0.004, f * 0.004, f * 0.12, 4), matVarilla);
+            antena.position.y = hPoste + f * 0.16;
+            g.add(poste, caja, letrero, antena);
+            // Dos varillas que entran al suelo (asoman antes de enterrarse)
+            [-1, 1].forEach(s => {
+                const varilla = new THREE.Mesh(
+                    new THREE.CylinderGeometry(f * 0.008, f * 0.005, f * 0.26, 5), matVarilla);
+                varilla.position.set(s * f * 0.035, f * 0.02, 0);
+                g.add(varilla);
+            });
+            // Hitbox invisible: el equipo es delgado, sin esto sería
+            // imposible clicarlo (sobre todo en táctil)
+            const hitS = new THREE.Mesh(
+                new THREE.SphereGeometry(f * 1.1, 8, 6),
+                new THREE.MeshBasicMaterial({ visible: false }));
+            hitS.position.y = hPoste;
+            g.add(hitS);
+
+            g.userData = {
+                tipo: "sensor", id: "S" + (i + 1),
+                u: (g.position.x - lim.minX) / Math.max(1e-6, lim.maxX - lim.minX),
+                v: (g.position.z - lim.minZ) / Math.max(1e-6, lim.maxZ - lim.minZ),
+            };
+            _scene.add(g);
+            grupos.push(g);
+        });
+
+        // ── Estación meteorológica al centro del lote ──────────────────────
+        const est = new THREE.Group();
+        est.position.set(cx + paso * 0.5, ALTURA_SUELO, cz + paso * 0.5);
+        const hM = Math.max(f * 1.15, hMaxCultivo * escAltura * 1.3);
+
+        const mastil = new THREE.Mesh(
+            new THREE.CylinderGeometry(f * 0.018, f * 0.024, hM, 6), matMastil);
+        mastil.position.y = hM / 2;
+        mastil.castShadow = true;
+        // Panel solar inclinado
+        const panel = new THREE.Mesh(
+            new THREE.BoxGeometry(f * 0.34, f * 0.015, f * 0.24),
+            new THREE.MeshLambertMaterial({ color: 0x1c2e4a }));
+        panel.position.set(f * 0.14, hM * 0.62, 0);
+        panel.rotation.z = -0.5;
+        // Pluviómetro (cilindro abierto en brazo lateral)
+        const pluv = new THREE.Mesh(
+            new THREE.CylinderGeometry(f * 0.045, f * 0.045, f * 0.10, 8, 1, true),
+            new THREE.MeshLambertMaterial({ color: 0xdfe3e6, side: THREE.DoubleSide }));
+        pluv.position.set(-f * 0.16, hM * 0.85, 0);
+        // Escudo de radiación T°/HR (discos apilados)
+        const escudo = new THREE.Mesh(
+            new THREE.CylinderGeometry(f * 0.04, f * 0.04, f * 0.09, 8), matBlanco);
+        escudo.position.set(f * 0.10, hM * 0.42, 0);
+        // Caja datalogger con letrero
+        const cajaEst = new THREE.Mesh(
+            new THREE.BoxGeometry(f * 0.18, f * 0.12, f * 0.06), matBlanco);
+        cajaEst.position.set(0, hM * 0.30, f * 0.03);
+        const letreroEst = new THREE.Mesh(
+            new THREE.PlaneGeometry(f * 0.15, f * 0.09), matLetrero);
+        letreroEst.position.set(0, hM * 0.30, f * 0.062);
+        est.add(mastil, panel, pluv, escudo, cajaEst, letreroEst);
+
+        // Anemómetro: cruz de 3 cazoletas que gira con el viento del día
+        const anemometro = new THREE.Group();
+        anemometro.position.y = hM + f * 0.04;
+        for (let b = 0; b < 3; b++) {
+            const ang = b * Math.PI * 2 / 3;
+            const brazo = new THREE.Mesh(
+                new THREE.CylinderGeometry(f * 0.004, f * 0.004, f * 0.10, 4), matMastil);
+            brazo.rotation.z = Math.PI / 2;
+            brazo.rotation.y = ang;
+            brazo.position.set(Math.cos(ang) * f * 0.05, 0, -Math.sin(ang) * f * 0.05);
+            const cazoleta = new THREE.Mesh(
+                new THREE.SphereGeometry(f * 0.022, 6, 5), matVarilla);
+            cazoleta.position.set(Math.cos(ang) * f * 0.10, 0, -Math.sin(ang) * f * 0.10);
+            anemometro.add(brazo, cazoleta);
+        }
+        est.add(anemometro);
+
+        // Hitbox invisible de la estación (cápsula generosa sobre el mástil)
+        const hitE = new THREE.Mesh(
+            new THREE.CylinderGeometry(f * 1.5, f * 1.5, hM * 1.3, 8),
+            new THREE.MeshBasicMaterial({ visible: false }));
+        hitE.position.y = hM * 0.55;
+        est.add(hitE);
+
+        est.userData = { tipo: "estacion", id: "Estación MILPÍN" };
+        _scene.add(est);
+        grupos.push(est);
+
+        return { grupos, anemometro };
+    }
+
+    // ── Interacción: clic en sensor/estación → popup + línea al dashboard ──
+    let _sensorActivo = null;
+
+    function _cerrarSensor() {
+        _sensorActivo = null;
+        const pop = document.getElementById("sim3d-sensor-pop");
+        const linea = document.getElementById("sim3d-sensor-linea");
+        if (pop) pop.style.display = "none";
+        if (linea) linea.style.display = "none";
+    }
+
+    function _clickEscena(ev) {
+        // Los sensores son equipo MILPÍN: en el escenario tradicional no existen
+        if (!_campo?.clicables?.length || !_camera || _escenario === "tradicional") {
+            _cerrarSensor();
+            return;
+        }
+        const rect = _renderer.domElement.getBoundingClientRect();
+        const ndc = new THREE.Vector2(
+            ((ev.clientX - rect.left) / rect.width) * 2 - 1,
+            -((ev.clientY - rect.top) / rect.height) * 2 + 1);
+        const ray = new THREE.Raycaster();
+        ray.setFromCamera(ndc, _camera);
+        const hits = ray.intersectObjects(_campo.clicables, true);
+        let obj = hits.length ? hits[0].object : null;
+        while (obj && !obj.userData?.tipo) obj = obj.parent;
+        if (!obj) { _cerrarSensor(); return; }
+        _sensorActivo = obj;
+        _renderPopupSensor();
+    }
+
+    function _renderPopupSensor() {
+        const pop = document.getElementById("sim3d-sensor-pop");
+        if (!pop || !_sensorActivo || !_sim) return;
+        const dia = _sim.res[_escenario].dias[_diaActual];
+        const ud = _sensorActivo.userData;
+
+        if (ud.tipo === "sensor") {
+            // El sensor lee la humedad LOCAL de su zona del heatmap
+            const { ccPct, pmpPct } = _sim.cfg;
+            const rango = Math.max(1e-6, ccPct - pmpPct);
+            const ruido = _campo.heat.sampler(ud.u, ud.v);
+            const thetaLocal = Math.max(pmpPct, Math.min(ccPct, dia.theta + ruido * 0.30 * rango));
+            const fLocal = (thetaLocal - pmpPct) / rango;
+            const [estado, colorEstado] =
+                fLocal > 0.8 ? ["Alta humedad", "#5ab1f0"] :
+                fLocal > 0.5 ? ["Óptimo", "#7fe0a0"] :
+                fLocal > 0.32 ? ["Déficit", "#f3cf63"] : ["Estrés", "#ff9c8f"];
+            const ce = (1.0 + Math.abs(ruido) * 1.2).toFixed(1);
+            pop.innerHTML = `
+                <div class="sim3d-pop-tit">Sensor ${ud.id}
+                    <button onclick="SIM3D._cerrarSensor()">✕</button></div>
+                <div class="sim3d-pop-fila"><span>Humedad</span><b>${thetaLocal.toFixed(1)} %</b></div>
+                <div class="sim3d-pop-fila"><span>Temperatura</span><b>${dia.t} °C</b></div>
+                <div class="sim3d-pop-fila"><span>Conductividad</span><b>${ce} dS/m</b></div>
+                <div class="sim3d-pop-fila"><span>Estado</span>
+                    <b style="color:${colorEstado}">${estado}</b></div>`;
+        } else {
+            pop.innerHTML = `
+                <div class="sim3d-pop-tit">${ud.id}
+                    <button onclick="SIM3D._cerrarSensor()">✕</button></div>
+                <div class="sim3d-pop-fila"><span>ETo</span><b>${dia.eto.toFixed(1)} mm</b></div>
+                <div class="sim3d-pop-fila"><span>Temperatura</span><b>${dia.t} °C</b></div>
+                <div class="sim3d-pop-fila"><span>Humedad rel.</span><b>${dia.hr} %</b></div>
+                <div class="sim3d-pop-fila"><span>Viento</span><b>${dia.viento} m/s</b></div>
+                <div class="sim3d-pop-fila"><span>Lluvia</span><b>${dia.lluvia.toFixed(1)} mm</b></div>`;
+        }
+        pop.style.display = "block";
+    }
+
+    function _crearEscena(canvasWrap, poligono, cultivoKey, sistemaRiego) {
+        // Limpieza de escena previa (reabrir / reiniciar)
+        _destruirEscena();
+
+        // Fallback a la ventana: el wrap puede medir 0 si el navegador está
+        // minimizado/oculto al abrir (el overlay siempre es pantalla completa)
+        const ancho = canvasWrap.clientWidth || window.innerWidth || 800;
+        const alto = canvasWrap.clientHeight || window.innerHeight || 600;
+        _renderer = new THREE.WebGLRenderer({ antialias: true });
+        _renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        _renderer.setSize(ancho, alto);
+        _renderer.shadowMap.enabled = true;
+        _renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        canvasWrap.appendChild(_renderer.domElement);
+
+        _scene = new THREE.Scene();
+        _scene.background = new THREE.Color(0xbfdcf0);
+
+        // Bounding box del polígono → encuadre de cámara y luces
+        let minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
+        poligono.forEach(p => {
+            minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]);
+            minZ = Math.min(minZ, p[1]); maxZ = Math.max(maxZ, p[1]);
+        });
+        const tam = Math.max(maxX - minX, maxZ - minZ, 60);
+        const cx = (minX + maxX) / 2, cz = (minZ + maxZ) / 2;
+        _scene.fog = new THREE.Fog(0xbfdcf0, tam * 3, tam * 9);
+
+        _camera = new THREE.PerspectiveCamera(55, ancho / alto, 0.5, tam * 20);
+        _camera.position.set(cx + tam * 0.85, tam * 0.65, cz + tam * 0.85);
+
+        _controls = new THREE.OrbitControls(_camera, _renderer.domElement);
+        _controls.target.set(cx, ALTURA_SUELO, cz);
+        _controls.maxPolarAngle = 1.45;
+        _controls.minDistance = Math.max(3, tam * 0.02);   // permite vista a ras
+        _controls.maxDistance = tam * 4;
+        _controls.enableDamping = true;
+        _controls.dampingFactor = 0.08;
+        // Orientar la cámara YA (lookAt vive en update()): sin esto, el
+        // raycast de clics apunta al vacío hasta el primer frame renderizado
+        _controls.update();
+        _camera.updateMatrixWorld();
+
+        // Luces: hemisferio (cielo/desierto) + sol direccional con sombras
+        _scene.add(new THREE.HemisphereLight(0xcfe8ff, 0xb59a6a, 0.85));
+        const sol = new THREE.DirectionalLight(0xfff4d6, 1.15);
+        sol.position.set(cx - tam, tam * 1.6, cz - tam * 0.4);
+        sol.castShadow = true;
+        sol.shadow.mapSize.set(1024, 1024);
+        const s = tam * 1.2;
+        sol.shadow.camera.left = -s; sol.shadow.camera.right = s;
+        sol.shadow.camera.top = s; sol.shadow.camera.bottom = -s;
+        sol.shadow.camera.far = tam * 6;
+        sol.target.position.set(cx, 0, cz);
+        _scene.add(sol, sol.target);
+
+        // Profundidades del perfil proporcionales al lote (corte legible)
+        const escPerfil = Math.max(1, tam * 0.016);
+        const perfil = {
+            arable: PROF_ARABLE * escPerfil,
+            raices: PROF_RAICES * escPerfil,
+            acuifero: PROF_ACUIFERO * escPerfil,
+        };
+        perfil.fondo = ALTURA_SUELO - perfil.arable - perfil.raices - perfil.acuifero;
+
+        // Terreno circundante (desierto sonorense), hundido: la parcela
+        // queda como diorama y el perfil del subsuelo se ve de costado
+        const piso = new THREE.Mesh(
+            new THREE.CircleGeometry(tam * 8, 48),
+            new THREE.MeshLambertMaterial({ color: 0xc9b287 })
+        );
+        piso.rotation.x = -Math.PI / 2;
+        piso.position.y = perfil.fondo - 0.2;
+        piso.receiveShadow = true;
+        _scene.add(piso);
+
+        // Perfil del subsuelo: tres extrusiones apiladas del mismo polígono
+        //   Suelo (arable, tinte por humedad) / Raíces / Agua subterránea
+        const forma = new THREE.Shape(poligono.map(p => new THREE.Vector2(p[0], p[1])));
+        const capas = [
+            { depth: perfil.arable, color: 0x4a3a2a, opacidad: 1.0 },
+            { depth: perfil.raices, color: 0x7a5c3f, opacidad: 1.0 },
+            { depth: perfil.acuifero, color: 0x1f5f8f, opacidad: 0.55 },
+        ];
+        let topYCapa = ALTURA_SUELO;
+        const meshCapas = capas.map(c => {
+            const mesh = new THREE.Mesh(
+                new THREE.ExtrudeGeometry(forma, { depth: c.depth, bevelEnabled: false }),
+                new THREE.MeshLambertMaterial({
+                    color: c.color, transparent: c.opacidad < 1, opacity: c.opacidad }));
+            mesh.rotation.x = -Math.PI / 2;
+            mesh.position.y = topYCapa - c.depth;
+            topYCapa -= c.depth;
+            _scene.add(mesh);
+            return mesh;
+        });
+        const suelo = meshCapas[0];
+        const matSuelo = suelo.material;
+        suelo.receiveShadow = true;
+
+        // Etiquetas flotantes del perfil (sprites siempre de cara a cámara)
+        const etiquetaPerfil = (texto, y) => {
+            const cv = document.createElement("canvas");
+            cv.width = 256; cv.height = 64;
+            const c2 = cv.getContext("2d");
+            c2.fillStyle = "rgba(10,25,38,0.78)";
+            c2.beginPath();
+            c2.roundRect ? c2.roundRect(2, 2, 252, 60, 18) : c2.rect(2, 2, 252, 60);
+            c2.fill();
+            c2.font = "600 30px Poppins, sans-serif";
+            c2.fillStyle = "#fff";
+            c2.textAlign = "center"; c2.textBaseline = "middle";
+            c2.fillText(texto, 128, 34);
+            const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+                map: new THREE.CanvasTexture(cv), transparent: true }));
+            sp.scale.set(tam * 0.085, tam * 0.021, 1);
+            sp.position.set(maxX + tam * 0.055, y, maxZ + tam * 0.02);
+            _scene.add(sp);
+        };
+        etiquetaPerfil("Suelo", ALTURA_SUELO - perfil.arable / 2);
+        etiquetaPerfil("Raíces", ALTURA_SUELO - perfil.arable - perfil.raices / 2);
+        etiquetaPerfil("Agua", perfil.fondo + perfil.acuifero / 2);
+
+        // Frente de infiltración: anillo que desciende por el perfil tras
+        // cada riego (polígono inflado 2.5% para asomar por los costados)
+        const cShapeX = poligono.reduce((s, p) => s + p[0], 0) / poligono.length;
+        const cShapeY = poligono.reduce((s, p) => s + p[1], 0) / poligono.length;
+        const formaExp = new THREE.Shape(poligono.map(p => new THREE.Vector2(
+            cShapeX + (p[0] - cShapeX) * 1.025,
+            cShapeY + (p[1] - cShapeY) * 1.025)));
+        const frenteInfiltra = new THREE.Mesh(
+            new THREE.ExtrudeGeometry(formaExp, { depth: 0.22 * escPerfil, bevelEnabled: false }),
+            new THREE.MeshBasicMaterial({
+                color: 0x4fa3e0, transparent: true, opacity: 0, depthWrite: false }));
+        frenteInfiltra.rotation.x = -Math.PI / 2;
+        frenteInfiltra.position.y = ALTURA_SUELO - 0.3 * escPerfil;
+        _scene.add(frenteInfiltra);
+
+        // Heatmap de humedad: plano con la silueta del lote + DataTexture.
+        // La media espacial es el θ del balance; el patrón es heterogeneidad
+        // de suelo simulada (determinista por parcela).
+        const heatN = 64;
+        const heatData = new Uint8Array(heatN * heatN * 4);
+        const heatTex = new THREE.DataTexture(heatData, heatN, heatN, THREE.RGBAFormat);
+        const geoHeat = new THREE.ShapeGeometry(forma);
+        {   // UVs normalizadas al bbox del polígono (ShapeGeometry trae UVs crudas)
+            const posAttr = geoHeat.attributes.position;
+            const uvAttr = geoHeat.attributes.uv;
+            for (let i = 0; i < posAttr.count; i++) {
+                uvAttr.setXY(i,
+                    (posAttr.getX(i) - minX) / Math.max(1e-6, maxX - minX),
+                    (posAttr.getY(i) - minZ) / Math.max(1e-6, maxZ - minZ));
+            }
+        }
+        // Lambert (no Basic): el heatmap recibe luz y sombras de las plantas
+        const heatMesh = new THREE.Mesh(geoHeat, new THREE.MeshLambertMaterial({
+            map: heatTex, transparent: true, opacity: 0.78, depthWrite: false }));
+        heatMesh.rotation.x = -Math.PI / 2;
+        heatMesh.position.y = ALTURA_SUELO + 0.04;
+        heatMesh.receiveShadow = true;
+        _scene.add(heatMesh);
+        const heat = {
+            n: heatN, data: heatData, tex: heatTex,
+            sampler: _crearRuidoCampo(_hashStr(cultivoKey + tam.toFixed(0))),
+        };
+
+        // Lámina de agua (animación de riego): misma silueta, casi a ras
+        const aguaMesh = new THREE.Mesh(
+            new THREE.ShapeGeometry(forma),
+            new THREE.MeshBasicMaterial({ color: 0x2f8fd8, transparent: true, opacity: 0, depthWrite: false })
+        );
+        aguaMesh.rotation.x = -Math.PI / 2;
+        aguaMesh.position.y = ALTURA_SUELO + 0.08;
+        _scene.add(aguaMesh);
+
+        // ── Plantas en surcos (InstancedMesh: 3 draw calls totales) ────
+        const vis = VISUAL_CULTIVO[cultivoKey] || VISUAL_CULTIVO.maiz;
+        const areaM2 = (maxX - minX) * (maxZ - minZ);
+        const MAX_PLANTAS = 1800;
+        const paso = Math.max(2.5, Math.sqrt(areaM2 / MAX_PLANTAS));
+        const posiciones = [];
+        const rndPlanta = _mulberry32(1234);
+        for (let x = minX + paso / 2; x < maxX; x += paso) {
+            for (let z = minZ + paso / 2; z < maxZ; z += paso) {
+                if (_puntoEnPoligono(x, z, poligono)) {
+                    posiciones.push({
+                        x: x + (rndPlanta() - 0.5) * paso * 0.25,
+                        z,                                    // surcos rectos en z
+                        esc: 0.8 + rndPlanta() * 0.45,        // variación natural
+                        rot: rndPlanta() * Math.PI * 2,
+                    });
+                }
+            }
+        }
+        const n = posiciones.length;
+        // Cada instancia representa varias plantas reales: el ancho de copa
+        // se escala al espaciamiento (las copas casi se tocan con g=1) para
+        // que el campo se lea lleno; la altura crece menos para no deformar.
+        const diamCopaM = paso * 0.85;
+        const escAltura = Math.min(3.0, Math.max(1, paso / 2.5));
+
+        // Una InstancedMesh por parte del modelo del cultivo (tallo, hojas,
+        // frutos, postes…) → pocos draw calls aun con miles de plantas.
+        const partes = _partesCultivo(cultivoKey).map(def => {
+            const k = def.offsets.length;
+            const mesh = new THREE.InstancedMesh(
+                def.geo,
+                new THREE.MeshLambertMaterial({ color: def.color }),
+                n * k);
+            mesh.castShadow = !def.esFruto;          // frutos sin sombra: ahorro
+            // Precomputar quaternions de los offsets (no cambian en el ciclo)
+            def.offsets.forEach(o => {
+                const e = o.r || [0, 0, 0];
+                o.q = new THREE.Quaternion().setFromEuler(new THREE.Euler(e[0], e[1], e[2]));
+            });
+            _scene.add(mesh);
+            return { ...def, mesh, verdeBase: def.color };
+        });
+
+        // Infraestructura del sistema de riego (cintas, aspersores, estacas)
+        const { equipo, fxMats } = _construirInfraRiego(
+            sistemaRiego || "gravedad", posiciones, paso, poligono,
+            { minX, maxX, minZ, maxZ }, escAltura, vis.hMax);
+
+        // Red de sensores + estación meteorológica (clicables, solo MILPÍN)
+        const sensores = _construirSensores(
+            posiciones, paso, { minX, maxX, minZ, maxZ }, escAltura, vis.hMax, cx, cz);
+        equipo.push(...sensores.grupos);
+
+        // Clic corto (no drag de órbita) sobre el canvas → lecturas
+        let pDownX = 0, pDownY = 0;
+        _renderer.domElement.addEventListener("pointerdown", ev => {
+            pDownX = ev.clientX; pDownY = ev.clientY;
+        });
+        _renderer.domElement.addEventListener("pointerup", ev => {
+            if (Math.abs(ev.clientX - pDownX) < 6 && Math.abs(ev.clientY - pDownY) < 6) {
+                _clickEscena(ev);
+            }
+        });
+
+        _campo = {
+            suelo, matSuelo, aguaMesh, partes, equipo, fxMats,
+            heat, heatMesh, frenteInfiltra, perfil,
+            clicables: sensores.grupos, anemometro: sensores.anemometro,
+            posiciones, vis, tam, cx, cz, diamCopaM, escAltura,
+        };
+        _ultimoG = -1;
+        _ultimaMad = -1;
+
+        // Resize handler
+        _campo.onResize = () => {
+            const w = canvasWrap.clientWidth, h = canvasWrap.clientHeight;
+            if (!w || !h) return;
+            _camera.aspect = w / h;
+            _camera.updateProjectionMatrix();
+            _renderer.setSize(w, h);
+        };
+        window.addEventListener("resize", _campo.onResize);
+    }
+
+    function _destruirEscena() {
+        if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
+        if (_campo?.onResize) window.removeEventListener("resize", _campo.onResize);
+        if (_renderer) {
+            _renderer.dispose();
+            _renderer.domElement?.remove();
+        }
+        if (_scene) {
+            _scene.traverse(o => {
+                if (o.geometry) o.geometry.dispose();
+                if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose());
+            });
+        }
+        _scene = _camera = _renderer = _controls = _campo = null;
+    }
+
+    // Reconstruye las matrices de instancias para una fracción de
+    // crecimiento g (0–1) y madurez de fruto mad (0–1). Solo se llama
+    // cuando alguna de las dos cambió lo suficiente.
+    function _aplicarCrecimiento(g, mad) {
+        const { partes, posiciones, vis, diamCopaM, escAltura } = _campo;
+        const gn = Math.max(0.06, g);
+        const hAdulta = vis.hMax * escAltura;     // altura de planta adulta (m)
+        const w = diamCopaM;                       // ancho de copa adulto (m)
+        const base = ALTURA_SUELO;
+
+        const mPlanta = new THREE.Matrix4();
+        const mLocal = new THREE.Matrix4();
+        const mFinal = new THREE.Matrix4();
+        const qPlanta = new THREE.Quaternion();
+        const ejeY = new THREE.Vector3(0, 1, 0);
+        const vPos = new THREE.Vector3();
+        const vEsc = new THREE.Vector3();
+        const UNO = new THREE.Vector3(1, 1, 1);
+
+        for (const parte of partes) {
+            const k = parte.offsets.length;
+            for (let i = 0; i < posiciones.length; i++) {
+                const p = posiciones[i];
+                qPlanta.setFromAxisAngle(ejeY, p.rot);
+                mPlanta.compose(vPos.set(p.x, base, p.z), qPlanta, UNO);
+
+                // Factor de tamaño de la parte:
+                //   estructura → fija; fruto → madurez; resto → crecimiento
+                let f = gn;
+                if (parte.esEstructura) f = 1;
+                else if (parte.esFruto) f = mad > 0.05 ? mad : 0.0001;
+                const fv = f * p.esc;
+
+                for (let j = 0; j < k; j++) {
+                    const o = parte.offsets[j];
+                    // sy de frutos sobre w (proporción esférica/colgante estable)
+                    const syBase = parte.esFruto ? o.s[1] * w : o.s[1] * hAdulta;
+                    mLocal.compose(
+                        vPos.set(o.p[0] * w * fv, o.p[1] * hAdulta * fv, o.p[2] * w * fv),
+                        o.q,
+                        vEsc.set(
+                            Math.max(1e-4, o.s[0] * w * fv),
+                            Math.max(1e-4, syBase * fv),
+                            Math.max(1e-4, o.s[2] * w * fv)));
+                    mFinal.multiplyMatrices(mPlanta, mLocal);
+                    parte.mesh.setMatrixAt(i * k + j, mFinal);
+                }
+            }
+            parte.mesh.instanceMatrix.needsUpdate = true;
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  ACTUALIZACIÓN VISUAL POR DÍA
+    // ════════════════════════════════════════════════════════════════
+
+    function _aplicarDia(idx, esSalto) {
+        if (!_sim || !_campo) return;
+        const datos = _sim.res[_escenario].dias;
+        idx = Math.max(0, Math.min(idx, datos.length - 1));
+        _diaActual = idx;
+        const dia = datos[idx];
+        const cat = _sim.cfg.cat;
+        const { ccPct, pmpPct } = _sim.cfg;
+
+        // 1) Crecimiento: fracción de desarrollo de copa desde la curva Kc.
+        //    Madurez de fruto: 0 al terminar desarrollo → 1 a media etapa final
+        const [kIni, kMed] = [cat.kc[0], cat.kc[1]];
+        const g = Math.max(0, Math.min(1, (dia.kc - kIni) / Math.max(0.01, kMed - kIni)));
+        const [dIni, dDes, dMed, dFin] = cat.etapas;
+        const finDes = dIni + dDes;
+        const mad = Math.max(0, Math.min(1, (dia.dia - finDes) / (dMed + dFin * 0.5)));
+        if (Math.abs(g - _ultimoG) > 0.02 || Math.abs(mad - _ultimaMad) > 0.04) {
+            _aplicarCrecimiento(g, mad);
+            _ultimoG = g;
+            _ultimaMad = mad;
+        }
+
+        // 2) Color del follaje: el estrés seca, la senescencia dora.
+        //    Cada parte conserva su verde base (tonos distintos por cultivo).
+        const seco = new THREE.Color(0x9a7b34);
+        const dorado = new THREE.Color(0xc8a14b);
+        const estres = 1 - dia.ks;                         // 0 sano → 1 marchito
+        const finMed = finDes + dMed;
+        const sen = dia.dia > finMed
+            ? Math.min(1, (dia.dia - finMed) / dFin) : 0;
+        for (const parte of _campo.partes) {
+            if (parte.esFollaje) {
+                parte.mesh.material.color
+                    .setHex(parte.verdeBase)
+                    .lerp(seco, Math.min(1, estres * 1.3))
+                    .lerp(dorado, sen * 0.85);
+            } else if (parte.frutoMadura) {
+                // Frutos que viran de color al madurar (chile verde → rojo)
+                parte.mesh.material.color
+                    .setHex(parte.frutoMadura[0])
+                    .lerp(new THREE.Color(parte.frutoMadura[1]), mad);
+            }
+        }
+
+        // 3) Suelo: húmedo oscuro ↔ seco claro según θ relativo (costados)
+        const fHum = Math.max(0, Math.min(1, (dia.theta - pmpPct) / (ccPct - pmpPct)));
+        _campo.matSuelo.color.copy(new THREE.Color(0xa3814f).lerp(new THREE.Color(0x3a2c1e), fHum));
+
+        // 3b) Heatmap: θ del día ± heterogeneidad espacial del lote.
+        //     🔴 estrés · 🟡 déficit · 🟢 óptimo · 🔵 alta humedad
+        if (_campo.heat) {
+            const { n, data, tex, sampler } = _campo.heat;
+            const rango = Math.max(1e-6, ccPct - pmpPct);
+            for (let j = 0; j < n; j++) {
+                for (let i = 0; i < n; i++) {
+                    const ruido = sampler(i / (n - 1), j / (n - 1));
+                    const f = (dia.theta + ruido * 0.30 * rango - pmpPct) / rango;
+                    const c = _colorHumedad(f);
+                    const k = (j * n + i) * 4;
+                    data[k] = c[0]; data[k + 1] = c[1]; data[k + 2] = c[2]; data[k + 3] = 235;
+                }
+            }
+            tex.needsUpdate = true;
+        }
+
+        // 4) Animación de riego (solo en reproducción, no al arrastrar slider)
+        if (dia.riegoBruto > 0 && !esSalto) _aguaOpacidad = 0.55;
+
+        _actualizarHUD(dia, idx, datos.length);
+
+        // Refrescar lecturas del sensor abierto con el día visible
+        if (_sensorActivo) _renderPopupSensor();
+
+        // Mover el cursor de día en la gráfica comparativa (si está abierta)
+        if (_chart && document.getElementById("sim3d-grafica")?.style.display !== "none") {
+            _chart.draw();
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  LOOP DE ANIMACIÓN
+    // ════════════════════════════════════════════════════════════════
+
+    function _animar(t) {
+        _rafId = requestAnimationFrame(_animar);
+        if (!_renderer || !_scene) return;
+        const dt = _relojPrev == null ? 0 : (t - _relojPrev) / 1000;
+        _relojPrev = t;
+
+        if (_reproduciendo && _sim) {
+            _acumulador += dt * _velocidad;
+            while (_acumulador >= 1) {
+                _acumulador -= 1;
+                if (_diaActual < _sim.ciclo - 1) {
+                    _aplicarDia(_diaActual + 1, false);
+                } else {
+                    _setReproduciendo(false);
+                    _mostrarResultados();
+                    break;
+                }
+            }
+        }
+
+        // Decaimiento del efecto de riego (lámina, rociado o bulbos):
+        // ~5 s visibles — un riego dura horas, que se alcance a apreciar
+        if (_aguaOpacidad > 0.005) {
+            _aguaOpacidad *= Math.pow(0.55, dt);
+            _aplicarOpacidadFX(_aguaOpacidad);
+        } else if (_aguaOpacidad !== 0) {
+            _aguaOpacidad = 0;
+            _aplicarOpacidadFX(0);
+        }
+
+        // Anemómetro de la estación: gira según el viento del día
+        if (_campo?.anemometro && _sim) {
+            const diaHoy = _sim.res[_escenario].dias[_diaActual];
+            _campo.anemometro.rotation.y += dt * (2 + (diaHoy?.viento || 2) * 1.5);
+        }
+
+        // Línea luminosa sensor → panel KPI + popup anclado al sensor
+        if (_sensorActivo && _campo && _camera) {
+            const linea = document.getElementById("sim3d-sensor-linea");
+            const pop = document.getElementById("sim3d-sensor-pop");
+            const kpis = document.getElementById("sim3d-kpis");
+            if (linea && pop && kpis) {
+                _v3Tmp = _v3Tmp || new THREE.Vector3();
+                _sensorActivo.getWorldPosition(_v3Tmp);
+                _v3Tmp.y += _campo.tam * 0.015;
+                _v3Tmp.project(_camera);
+                if (_v3Tmp.z < 1) {
+                    const w = _renderer.domElement.clientWidth;
+                    const h = _renderer.domElement.clientHeight;
+                    const x1 = (_v3Tmp.x + 1) / 2 * w;
+                    const y1 = (1 - _v3Tmp.y) / 2 * h;
+                    const r = kpis.getBoundingClientRect();
+                    const dx = (r.left + r.width / 2) - x1;
+                    const dy = r.bottom - y1;
+                    linea.style.display = "block";
+                    linea.style.left = `${x1}px`;
+                    linea.style.top = `${y1}px`;
+                    linea.style.width = `${Math.hypot(dx, dy)}px`;
+                    linea.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
+                    pop.style.left = `${Math.min(w - 210, Math.max(8, x1 + 16))}px`;
+                    pop.style.top = `${Math.min(h - 180, Math.max(64, y1 - 40))}px`;
+                } else {
+                    linea.style.display = "none";
+                }
+            }
+        }
+
+        // Transición suave entre vistas de cámara (dron)
+        if (_camTween && _camera) {
+            _camTween.t += dt / 0.9;
+            const k = Math.min(1, _camTween.t);
+            const s = k * k * (3 - 2 * k);           // smoothstep
+            _camera.position.lerpVectors(_camTween.p0, _camTween.p1, s);
+            _controls.target.lerpVectors(_camTween.o0, _camTween.o1, s);
+            if (k >= 1) _camTween = null;
+        }
+
+        _controls.update();
+        _renderer.render(_scene, _camera);
+    }
+
+    // Vistas de cámara predefinidas: 🛰 satélite (cenital), 🚜 parcela
+    // (diagonal elevada, la default) y 🌱 cultivo (a ras, entre plantas)
+    function _setVista(id) {
+        if (!_campo || !_camera) return;
+        const { tam, cx, cz, vis, escAltura } = _campo;
+        const hPlanta = ALTURA_SUELO + vis.hMax * escAltura;
+        const vistas = {
+            satelite: { p: [cx + tam * 0.02, tam * 1.55, cz + tam * 0.02],
+                        o: [cx, ALTURA_SUELO, cz] },
+            parcela:  { p: [cx + tam * 0.85, tam * 0.65, cz + tam * 0.85],
+                        o: [cx, ALTURA_SUELO, cz] },
+            cultivo:  { p: [cx, hPlanta * 0.85, cz + tam * 0.28],
+                        o: [cx, hPlanta * 0.45, cz - tam * 0.1] },
+        };
+        const v = vistas[id];
+        if (!v) return;
+        _camTween = {
+            t: 0,
+            p0: _camera.position.clone(), p1: new THREE.Vector3(...v.p),
+            o0: _controls.target.clone(), o1: new THREE.Vector3(...v.o),
+        };
+        document.querySelectorAll(".sim3d-cams button[data-vista]").forEach(b =>
+            b.classList.toggle("activo", b.dataset.vista === id));
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  UI — overlay, HUD, controles, resultados
+    // ════════════════════════════════════════════════════════════════
+
+    function _fmt(n, dec = 0) {
+        return Number(n).toLocaleString("es-MX", { maximumFractionDigits: dec, minimumFractionDigits: dec });
+    }
+
+    function _construirOverlay() {
+        if (_overlay) return;
+        _overlay = document.createElement("div");
+        _overlay.id = "sim3d-overlay";
+        _overlay.innerHTML = `
+        <div id="sim3d-canvas-wrap"></div>
+
+        <div class="sim3d-topbar">
+            <button class="sim3d-btn-volver" onclick="SIM3D.cerrar()" aria-label="Cerrar simulador">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                </svg>
+            </button>
+            <div class="sim3d-topbar-tit">
+                <span id="sim3d-titulo">Simulador 3D</span>
+                <span id="sim3d-subtitulo" class="sim3d-topbar-sub">—</span>
+            </div>
+            <div class="sim3d-esc-toggle" id="sim3d-esc-toggle">
+                ${SISTEMAS.map(s => `
+                <button data-sistema="${s.id}" class="${s.id === "fao56" ? "activo" : ""}"
+                        title="${s.desc}"
+                        onclick="SIM3D._setEscenario('${s.id}')">${s.nombre}</button>`).join("")}
+            </div>
+        </div>
+
+        <div class="sim3d-hud">
+            <div class="sim3d-hud-fila">
+                <span id="sim3d-hud-dia" class="sim3d-chip sim3d-chip--dia">Día 1</span>
+                <span id="sim3d-hud-etapa" class="sim3d-chip">Inicial</span>
+                <span id="sim3d-hud-clima" class="sim3d-chip" style="display:none;">🌧</span>
+                <span id="sim3d-hud-riego" class="sim3d-chip sim3d-chip--riego" style="display:none;">💧 Riego</span>
+            </div>
+            <div class="sim3d-hud-humedad">
+                <div class="sim3d-hud-hum-lbl">
+                    <span>Humedad del suelo</span><span id="sim3d-hud-hum-pct">—</span>
+                </div>
+                <div class="sim3d-hud-hum-track">
+                    <div id="sim3d-hud-hum-fill"></div>
+                    <div id="sim3d-hud-hum-umbral" title="Umbral de riego (50% ADT)"></div>
+                </div>
+            </div>
+            <div id="sim3d-hud-detalle" class="sim3d-hud-detalle"></div>
+            <div class="sim3d-heat-leyenda" id="sim3d-heat-leyenda">
+                <span><i style="background:#2f7fc1"></i>Alta</span>
+                <span><i style="background:#3f9b4f"></i>Óptimo</span>
+                <span><i style="background:#d8b832"></i>Déficit</span>
+                <span><i style="background:#c23a2e"></i>Estrés</span>
+            </div>
+        </div>
+
+        <div class="sim3d-cams">
+            <button data-vista="satelite" title="Vista satélite"
+                    onclick="SIM3D._setVista('satelite')">🛰</button>
+            <button data-vista="parcela" class="activo" title="Vista parcela"
+                    onclick="SIM3D._setVista('parcela')">🚜</button>
+            <button data-vista="cultivo" title="Vista cultivo"
+                    onclick="SIM3D._setVista('cultivo')">🌱</button>
+            <button id="sim3d-btn-heat" class="activo" title="Mapa de humedad"
+                    onclick="SIM3D._toggleHeatmap()">🌡</button>
+        </div>
+
+        <div class="sim3d-kpis" id="sim3d-kpis"></div>
+
+        <div class="sim3d-controles">
+            <button id="sim3d-btn-play" class="sim3d-btn-play" onclick="SIM3D._togglePlay()">▶</button>
+            <input id="sim3d-slider" type="range" min="0" max="100" value="0"
+                   oninput="SIM3D._irADia(parseInt(this.value))">
+            <button id="sim3d-btn-vel" class="sim3d-btn-vel" onclick="SIM3D._cicloVelocidad()">3×</button>
+            <button class="sim3d-btn-vel" onclick="SIM3D._toggleGrafica()"
+                    aria-label="Comparar sistemas de recomendación">📈</button>
+            <button class="sim3d-btn-vel" onclick="SIM3D._toggleConfig()" aria-label="Configurar simulación">⚙</button>
+        </div>
+
+        <div id="sim3d-grafica" class="sim3d-grafica" style="display:none;">
+            <div class="sim3d-graf-head">
+                <span class="sim3d-graf-tit">Sistemas de recomendación · día a día</span>
+                <button class="sim3d-res-cerrar" style="position:static;"
+                        onclick="SIM3D._toggleGrafica()">✕</button>
+            </div>
+            <div class="sim3d-graf-metricas">
+                <button data-met="theta" class="activo"
+                        onclick="SIM3D._setMetrica('theta')">Humedad del suelo</button>
+                <button data-met="agua"
+                        onclick="SIM3D._setMetrica('agua')">Agua acumulada</button>
+                <button data-met="ks"
+                        onclick="SIM3D._setMetrica('ks')">Estrés (Ks)</button>
+            </div>
+            <div class="sim3d-graf-canvas-wrap">
+                <canvas id="sim3d-chart"></canvas>
+            </div>
+            <p class="sim3d-graf-nota">
+                Mismo clima para los tres sistemas. Los puntos marcan eventos de riego;
+                la línea vertical es el día visible en 3D.
+            </p>
+        </div>
+
+        <div id="sim3d-config" class="sim3d-config" style="display:none;">
+            <div class="sim3d-config-tit">Parámetros de simulación</div>
+            <label class="sim3d-config-lbl">Cultivo</label>
+            <select id="sim3d-sel-cultivo" class="sim3d-config-input"></select>
+            <label class="sim3d-config-lbl">Sistema de riego (escenario MILPÍN)</label>
+            <select id="sim3d-sel-sistema" class="sim3d-config-input">
+                <option value="gravedad">Gravedad (ef. 65%)</option>
+                <option value="aspersion">Aspersión (ef. 80%)</option>
+                <option value="microaspersion">Microaspersión (ef. 82%)</option>
+                <option value="goteo">Goteo (ef. 90%)</option>
+            </select>
+            <label class="sim3d-config-lbl">Fecha de siembra</label>
+            <input id="sim3d-fecha-siembra" type="date" class="sim3d-config-input">
+            <button class="sim3d-btn-reiniciar" onclick="SIM3D._reiniciar()">Aplicar y reiniciar ciclo</button>
+            <p class="sim3d-config-nota">
+                El escenario Tradicional siempre simula la práctica actual DR-041:
+                gravedad por calendario (${TRAD_LAMINA_BRUTA_MM} mm cada ${TRAD_INTERVALO_DIAS} días).
+            </p>
+        </div>
+
+        <div id="sim3d-resultados" class="sim3d-resultados" style="display:none;"></div>
+
+        <div id="sim3d-sensor-linea" style="display:none;"></div>
+        <div id="sim3d-sensor-pop" style="display:none;"></div>
+
+        <div id="sim3d-cargando" class="sim3d-cargando">
+            <span class="bi-spinner"></span> Preparando parcela 3D…
+        </div>`;
+        document.body.appendChild(_overlay);
+    }
+
+    function _actualizarHUD(dia, idx, total) {
+        const $ = id => document.getElementById(id);
+        const fecha = dia.fecha.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+        $("sim3d-hud-dia").textContent = `Día ${dia.dia}/${total} · ${fecha}`;
+        $("sim3d-hud-etapa").textContent = `${dia.etapa} · Kc ${dia.kc.toFixed(2)}`;
+        $("sim3d-hud-clima").style.display = dia.lluvia > 0.5 ? "" : "none";
+        $("sim3d-hud-clima").textContent = `🌧 ${dia.lluvia.toFixed(0)} mm`;
+        $("sim3d-hud-riego").style.display = dia.riegoBruto > 0 ? "" : "none";
+        $("sim3d-hud-riego").textContent = `💧 Riego ${dia.riegoBruto.toFixed(0)} mm`;
+
+        const { ccPct, pmpPct } = _sim.cfg;
+        const f = Math.max(0, Math.min(1, (dia.theta - pmpPct) / (ccPct - pmpPct)));
+        const fill = $("sim3d-hud-hum-fill");
+        fill.style.width = `${(f * 100).toFixed(0)}%`;
+        fill.style.background = f > 0.5 ? "var(--primary-blue)" : f > 0.25 ? "var(--amber-strong)" : "var(--red-strong)";
+        $("sim3d-hud-hum-pct").textContent = `θ ${dia.theta.toFixed(1)}%`;
+        $("sim3d-hud-hum-umbral").style.left = "50%";
+
+        $("sim3d-hud-detalle").innerHTML =
+            `ETc <b>${dia.etc.toFixed(1)}</b> mm · ETo ${dia.eto.toFixed(1)} mm` +
+            (dia.ks < 1 ? ` · <span class="sim3d-estres">estrés Ks ${dia.ks.toFixed(2)}</span>` : "");
+
+        const slider = $("sim3d-slider");
+        if (slider && Number(slider.value) !== idx) slider.value = idx;
+    }
+
+    function _renderKPIs() {
+        const el = document.getElementById("sim3d-kpis");
+        if (!el || !_sim) return;
+        // Mini-tabla: los 3 sistemas lado a lado, el visible en 3D resaltado
+        el.innerHTML = `
+            <div class="sim3d-kpi-card sim3d-kpi-card--tabla">
+                <div class="sim3d-kpi-fila sim3d-kpi-fila--cab">
+                    <span>Sistema</span><span>m³/ha</span><span>ton/ha</span>
+                </div>
+                ${SISTEMAS.map(s => {
+                    const t = _sim.res[s.id].totales;
+                    return `
+                <div class="sim3d-kpi-fila ${s.id === _escenario ? "sim3d-kpi-fila--activa" : ""}"
+                     onclick="SIM3D._setEscenario('${s.id}')" title="${s.desc}">
+                    <span><i class="sim3d-kpi-dot" style="background:${s.color}"></i>${s.nombre}</span>
+                    <span>${_fmt(t.volumenM3Ha)}</span>
+                    <span>${_fmt(t.rendTonHa, 1)}</span>
+                </div>`;
+                }).join("")}
+            </div>`;
+    }
+
+    function _mostrarResultados() {
+        const el = document.getElementById("sim3d-resultados");
+        if (!el || !_sim) return;
+        const cfg = _sim.cfg;
+        const area = cfg.areaHa || 1;
+        const precio = PRECIO_TON_MXN[cfg.cultivoKey] || 6000;
+        const tot = id => _sim.res[id].totales;
+        const t = tot("tradicional");
+
+        // Mejor sistema de recomendación: máximo beneficio económico vs baseline
+        const beneficio = id => {
+            const m = tot(id);
+            return (t.costoAguaMxnHa - m.costoAguaMxnHa) * area
+                 + (m.rendTonHa - t.rendTonHa) * precio * area;
+        };
+        const mejor = ["fao56", "xgboost"].reduce((a, b) => beneficio(b) > beneficio(a) ? b : a);
+        const m = tot(mejor);
+        const nombreMejor = SISTEMAS.find(s => s.id === mejor).nombre;
+        const pctAgua = t.volumenM3Ha > 0 ? ((1 - m.volumenM3Ha / t.volumenM3Ha) * 100) : 0;
+        const ahorroAguaM3 = (t.volumenM3Ha - m.volumenM3Ha) * area;
+
+        const fila = (lbl, fmt, unidad = "") => `
+            <div class="sim3d-res-fila sim3d-res-fila--3">
+                <span class="sim3d-res-lbl">${lbl}</span>
+                ${SISTEMAS.map(s => `
+                <span class="${s.id === mejor ? "sim3d-res-milpin" : "sim3d-res-trad"}">
+                    ${fmt(tot(s.id))}${unidad}</span>`).join("")}
+            </div>`;
+
+        el.innerHTML = `
+            <button class="sim3d-res-cerrar" onclick="document.getElementById('sim3d-resultados').style.display='none'">✕</button>
+            <div class="sim3d-res-tit">Resultados del ciclo · ${NOMBRE_CULTIVO[cfg.cultivoKey] || cfg.cultivoKey}</div>
+            <div class="sim3d-res-headline">
+                Mejor sistema: <b>${nombreMejor}</b> —
+                <b>${pctAgua >= 0 ? "−" : "+"}${_fmt(Math.abs(pctAgua), 0)}% agua</b> y
+                <b>${m.rendTonHa >= t.rendTonHa ? "+" : "−"}${_fmt(Math.abs(m.rendTonHa - t.rendTonHa), 1)} ton/ha</b>
+                vs práctica tradicional
+            </div>
+            <div class="sim3d-res-cab sim3d-res-fila--3">
+                <span></span>${SISTEMAS.map(s => `<span>${s.nombre}</span>`).join("")}
+            </div>
+            ${fila("Agua aplicada (m³/ha)", x => _fmt(x.volumenM3Ha))}
+            ${fila("Eventos de riego", x => x.nRiegos)}
+            ${fila("Días con estrés", x => x.diasEstres)}
+            ${fila("ETa/ETc", x => _fmt(x.relEt * 100, 0) + "%")}
+            ${fila("Rendimiento (ton/ha)", x => _fmt(x.rendTonHa, 1))}
+            ${fila("Costo agua (MXN/ha)", x => "$" + _fmt(x.costoAguaMxnHa))}
+            <div class="sim3d-res-beneficio">
+                Beneficio del ciclo en <b>${_fmt(area, 1)} ha</b> con ${nombreMejor}:
+                ahorro de <b>${_fmt(Math.max(0, ahorroAguaM3))} m³</b> de agua
+                ≈ <b>$${_fmt(Math.max(0, beneficio(mejor)))} MXN</b>
+                <span class="sim3d-res-desglose">
+                    (agua a $${TARIFA_M3_MXN}/m³ + rendimiento a precio est. $${_fmt(precio)}/ton)
+                </span>
+            </div>
+            <p class="sim3d-res-nota">
+                Simulación FAO-56 / FAO-33 con clima sintético del Valle del Yaqui
+                (determinista: los tres sistemas reciben el mismo clima). El sistema
+                ML aproxima la política del modelo XGBoost del repo, no lo ejecuta.
+                Herramienta de apoyo a decisiones — no sustituye el juicio agronómico.
+            </p>`;
+        el.style.display = "block";
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  GRÁFICA COMPARATIVA (Chart.js, ya cargado globalmente en index.html)
+    // ════════════════════════════════════════════════════════════════
+
+    // Línea vertical punteada en el día visible en 3D (se redibuja con draw())
+    const _pluginCursorDia = {
+        id: "cursorDia",
+        afterDatasetsDraw(chart) {
+            const x = chart.scales.x.getPixelForValue(_diaActual);
+            if (!isFinite(x)) return;
+            const { top, bottom } = chart.chartArea;
+            const c = chart.ctx;
+            c.save();
+            c.strokeStyle = "rgba(31,45,61,0.6)";
+            c.lineWidth = 1.5;
+            c.setLineDash([4, 3]);
+            c.beginPath(); c.moveTo(x, top); c.lineTo(x, bottom); c.stroke();
+            c.restore();
+        },
+    };
+
+    function _construirGrafica() {
+        if (!_sim || typeof Chart === "undefined") return;
+        const canvas = document.getElementById("sim3d-chart");
+        if (!canvas) return;
+        if (_chart) { _chart.destroy(); _chart = null; }
+
+        const labels = _sim.res.fao56.dias.map(d => d.dia);
+        const datasets = SISTEMAS.map(s => {
+            const dias = _sim.res[s.id].dias;
+            let serie;
+            if (_chartMetrica === "agua") {
+                let acc = 0;
+                serie = dias.map(d => Math.round(acc += d.riegoBruto * 10));
+            } else if (_chartMetrica === "ks") {
+                serie = dias.map(d => d.ks);
+            } else {
+                serie = dias.map(d => d.theta);
+            }
+            return {
+                label: s.nombre, data: serie,
+                borderColor: s.color, backgroundColor: s.color,
+                pointRadius: dias.map(d => d.riegoBruto > 0 ? 3 : 0),
+                pointHoverRadius: 4, borderWidth: 2, tension: 0.25,
+            };
+        });
+
+        // Líneas guía del suelo solo en la vista de humedad
+        if (_chartMetrica === "theta") {
+            const { ccPct, pmpPct } = _sim.cfg;
+            const umbral = pmpPct + 0.5 * (ccPct - pmpPct);
+            [[ccPct, "CC"], [umbral, "Umbral 50% ADT"], [pmpPct, "PMP"]].forEach(([v, lbl]) =>
+                datasets.push({
+                    label: lbl, data: labels.map(() => v),
+                    borderColor: "rgba(107,124,147,0.5)", borderDash: [5, 4],
+                    borderWidth: 1, pointRadius: 0,
+                }));
+        }
+
+        const tituloY = _chartMetrica === "agua" ? "Agua aplicada acumulada (m³/ha)"
+            : _chartMetrica === "ks" ? "Ks (1 = sin estrés)"
+            : "Humedad del suelo θ (%)";
+
+        _chart = new Chart(canvas, {
+            type: "line",
+            data: { labels, datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false, animation: false,
+                interaction: { mode: "index", intersect: false },
+                scales: {
+                    x: { title: { display: true, text: "Día del ciclo" },
+                         ticks: { maxTicksLimit: 12 } },
+                    y: { title: { display: true, text: tituloY } },
+                },
+                plugins: { legend: { labels: { boxWidth: 14, boxHeight: 2 } } },
+            },
+            plugins: [_pluginCursorDia],
+        });
+    }
+
+    function _toggleGrafica() {
+        const p = document.getElementById("sim3d-grafica");
+        if (!p) return;
+        const abrirPanel = p.style.display === "none";
+        p.style.display = abrirPanel ? "block" : "none";
+        if (abrirPanel && !_chart) _construirGrafica();
+    }
+
+    function _setMetrica(met) {
+        _chartMetrica = met;
+        document.querySelectorAll(".sim3d-graf-metricas button").forEach(b =>
+            b.classList.toggle("activo", b.dataset.met === met));
+        _construirGrafica();
+    }
+
+    // Tras reiniciar (otro cultivo/fecha) los datos cambian: rehacer si está abierta
+    function _resetGrafica() {
+        if (_chart) { _chart.destroy(); _chart = null; }
+        const p = document.getElementById("sim3d-grafica");
+        if (p && p.style.display !== "none") _construirGrafica();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  CONTROL DE REPRODUCCIÓN / CONFIG
+    // ════════════════════════════════════════════════════════════════
+
+    function _setReproduciendo(estado) {
+        _reproduciendo = estado;
+        const btn = document.getElementById("sim3d-btn-play");
+        if (btn) btn.textContent = estado ? "❚❚" : "▶";
+    }
+
+    function _setEscenario(esc) {
+        if (!SISTEMAS.some(s => s.id === esc)) esc = "fao56";
+        _escenario = esc;
+        document.querySelectorAll("#sim3d-esc-toggle button").forEach(b =>
+            b.classList.toggle("activo", b.dataset.sistema === esc));
+        _ultimoG = -1;                       // fuerza rebuild de matrices
+        _ultimaMad = -1;
+        // El Tradicional riega por gravedad: ocultar el equipo moderno
+        // (incluidos sensores y estación — no existen sin MILPÍN)
+        if (_campo?.equipo) {
+            _campo.equipo.forEach(mesh => { mesh.visible = esc !== "tradicional"; });
+        }
+        if (esc === "tradicional") _cerrarSensor();
+        _aguaOpacidad = 0.5;                 // pulso demo del efecto de riego
+        _renderKPIs();
+        _aplicarDia(_diaActual, true);
+    }
+
+    async function _reiniciar() {
+        if (!_sim) return;
+        const cfg = _sim.cfg;
+        const selC = document.getElementById("sim3d-sel-cultivo");
+        const selS = document.getElementById("sim3d-sel-sistema");
+        const inF = document.getElementById("sim3d-fecha-siembra");
+        if (selC?.value) cfg.cultivoKey = selC.value;
+        if (selS?.value) cfg.sistema = selS.value;
+        if (inF?.value) cfg.fechaSiembra = new Date(inF.value + "T12:00:00");
+
+        const catalogo = await _obtenerCatalogo();
+        cfg.cat = catalogo[cfg.cultivoKey] || CATALOGO_FALLBACK[cfg.cultivoKey] || CATALOGO_FALLBACK.maiz;
+
+        _sim = _correrComparativa(cfg);
+        document.getElementById("sim3d-slider").max = _sim.ciclo - 1;
+        document.getElementById("sim3d-resultados").style.display = "none";
+        document.getElementById("sim3d-config").style.display = "none";
+        document.getElementById("sim3d-subtitulo").textContent =
+            `${NOMBRE_CULTIVO[cfg.cultivoKey]} · ${_fmt(cfg.areaHa, 1)} ha · ${cfg.sistema}`;
+
+        // El cambio de cultivo o sistema cambia la escena → reconstruir.
+        // _setEscenario reaplica visibilidad del equipo de riego y KPIs.
+        _crearEscena(document.getElementById("sim3d-canvas-wrap"), cfg.poligono, cfg.cultivoKey, cfg.sistema);
+        _setEscenario(_escenario);
+        _resetGrafica();
+        _aplicarDia(0, true);
+        _setReproduciendo(true);
+        if (!_rafId) { _relojPrev = null; _rafId = requestAnimationFrame(_animar); }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  API PÚBLICA
+    // ════════════════════════════════════════════════════════════════
+
+    async function abrir(idParcela, propsMapa) {
+        _construirOverlay();
+        _overlay.style.display = "block";
+        document.getElementById("sim3d-cargando").style.display = "flex";
+        document.getElementById("sim3d-resultados").style.display = "none";
+
+        try {
+            const [parcela, catalogo] = await Promise.all([
+                _obtenerParcela(idParcela),
+                _obtenerCatalogo(),
+                _asegurarThree(),
+            ]);
+
+            const nombreCultivo = parcela?.cultivo_nombre || propsMapa?.cultivo || "Maíz";
+            let cultivoKey = _normalizar(nombreCultivo);
+            if (!CATALOGO_FALLBACK[cultivoKey] && !catalogo[cultivoKey]) cultivoKey = "maiz";
+
+            const cfg = {
+                idParcela: idParcela || "demo",
+                nombreParcela: parcela?.nombre_parcela || propsMapa?.nombre || "Parcela demo",
+                areaHa: Number(parcela?.area_ha || propsMapa?.area_ha) || 10,
+                // CC/PMP en BD son fracción m³/m³ → balance trabaja en %
+                ccPct: (Number(parcela?.capacidad_campo) || 0.34) * 100,
+                pmpPct: (Number(parcela?.punto_marchitez) || 0.18) * 100,
+                profM: (Number(parcela?.profundidad_raiz_cm) || 60) / 100,
+                sistema: _normalizar(parcela?.sistema_riego || propsMapa?.sistema_riego) || "gravedad",
+                cultivoKey,
+                cat: catalogo[cultivoKey] || CATALOGO_FALLBACK[cultivoKey],
+                // Default: ciclo OI (oct–abr), la temporada de riego del Yaqui
+                // donde vive el KPI 8,000→6,000 m³/ha. En PV (verano) la demanda
+                // ETc es tan alta que el calendario tradicional sub-riega: ahí
+                // MILPÍN gana por rendimiento, no por agua.
+                fechaSiembra: new Date("2026-11-15T12:00:00"),
+                poligono: _poligonoDeParcela(parcela),
+            };
+            if (!EFICIENCIA_RIEGO[cfg.sistema]) cfg.sistema = "gravedad";
+
+            // Poblar selectores de configuración
+            const selC = document.getElementById("sim3d-sel-cultivo");
+            selC.innerHTML = Object.keys(CATALOGO_FALLBACK)
+                .map(k => `<option value="${k}" ${k === cultivoKey ? "selected" : ""}>${NOMBRE_CULTIVO[k]}</option>`)
+                .join("");
+            document.getElementById("sim3d-sel-sistema").value = cfg.sistema;
+            document.getElementById("sim3d-fecha-siembra").value = "2026-11-15";
+
+            document.getElementById("sim3d-titulo").textContent = cfg.nombreParcela;
+            document.getElementById("sim3d-subtitulo").textContent =
+                `${NOMBRE_CULTIVO[cultivoKey]} · ${_fmt(cfg.areaHa, 1)} ha · ${cfg.sistema}`;
+
+            _sim = _correrComparativa(cfg);
+            document.getElementById("sim3d-slider").max = _sim.ciclo - 1;
+
+            _crearEscena(document.getElementById("sim3d-canvas-wrap"), cfg.poligono, cultivoKey, cfg.sistema);
+            if (_chart) { _chart.destroy(); _chart = null; }
+            _setEscenario("fao56");
+            _renderKPIs();
+            _aplicarDia(0, true);
+            _setReproduciendo(true);
+            _relojPrev = null;
+            _rafId = requestAnimationFrame(_animar);
+        } catch (e) {
+            console.error("[SIM3D] Error al abrir el simulador:", e);
+            alert("No se pudo iniciar el simulador 3D: " + e.message);
+            cerrar();
+            return;
+        } finally {
+            const carga = document.getElementById("sim3d-cargando");
+            if (carga) carga.style.display = "none";
+        }
+    }
+
+    function cerrar() {
+        _setReproduciendo(false);
+        _cerrarSensor();
+        _destruirEscena();
+        if (_chart) { _chart.destroy(); _chart = null; }
+        const graf = document.getElementById("sim3d-grafica");
+        if (graf) graf.style.display = "none";
+        if (_overlay) _overlay.style.display = "none";
+    }
+
+    window.SIM3D = {
+        abrir,
+        cerrar,
+        _togglePlay: () => _setReproduciendo(!_reproduciendo),
+        _irADia: (d) => { _setReproduciendo(false); _aplicarDia(d, true); },
+        _setEscenario,
+        _reiniciar,
+        _toggleGrafica,
+        _setMetrica,
+        _setVista,
+        _cerrarSensor,
+        _toggleHeatmap: () => {
+            if (!_campo?.heatMesh) return;
+            _campo.heatMesh.visible = !_campo.heatMesh.visible;
+            document.getElementById("sim3d-btn-heat")
+                ?.classList.toggle("activo", _campo.heatMesh.visible);
+            const ley = document.getElementById("sim3d-heat-leyenda");
+            if (ley) ley.style.display = _campo.heatMesh.visible ? "" : "none";
+        },
+        _toggleConfig: () => {
+            const c = document.getElementById("sim3d-config");
+            if (c) c.style.display = c.style.display === "none" ? "block" : "none";
+        },
+        _cicloVelocidad: () => {
+            _velocidad = _velocidad === 1 ? 3 : _velocidad === 3 ? 7 : 1;
+            const btn = document.getElementById("sim3d-btn-vel");
+            if (btn) btn.textContent = `${_velocidad}×`;
+        },
+        _mostrarResultados,
+    };
+})();

@@ -1,0 +1,1 @@
+{"cultivo":"Maíz","ciclo_total_dias":140,"fuente":"cultivos_catalogo","etapas":[{"nombre":"inicial","dias":"1-25","duracion_dias":25,"kc":0.3},{"nombre":"desarrollo","dias":"26-65","duracion_dias":40,"kc_inicio":0.3,"kc_fin":1.2},{"nombre":"mediados","dias":"66-110","duracion_dias":45,"kc":1.2},{"nombre":"final","dias":"111-140","duracion_dias":30,"kc_inicio":1.2,"kc_fin":0.6}]}
